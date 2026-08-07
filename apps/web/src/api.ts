@@ -1,4 +1,4 @@
-import type { Dossier, User, ComplianceReport } from './types';
+import type { Dossier, User, ComplianceReport, CatalogEquipment } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -33,10 +33,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+  const headers: Record<string, string> = {};
+  if (options.headers) {
+    Object.assign(headers, options.headers as Record<string, string>);
+  }
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+  if (!isFormData && options.body != null) {
+    headers['Content-Type'] = 'application/json';
+  }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -120,6 +124,20 @@ export const api = {
       { method: 'POST', headers: {}, body: form }
     );
   },
+
+  // Equipment catalog
+  scanEquipment: (file: File, cableType?: 'AC' | 'DC') => {
+    const form = new FormData();
+    form.append('datasheet', file);
+    if (cableType) form.append('cableType', cableType);
+    return request<{ message: string; equipment: CatalogEquipment; scannedData: any }>(
+      '/api/equipment/scan',
+      { method: 'POST', headers: {}, body: form }
+    );
+  },
+  listEquipment: () => request<CatalogEquipment[]>('/api/equipment'),
+  deleteEquipment: (id: string) =>
+    request<{ message: string }>(`/api/equipment/${id}`, { method: 'DELETE' }),
 
   // Users (admin)
   listUsers: () => request<User[]>('/api/users'),

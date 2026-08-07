@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
@@ -24,7 +25,7 @@ export async function scanDatasheet(fileBuffer, fileName) {
       "brand": "manufacturer name",
       "model": "model number",
       "specs": {
-        // For PANELS: pmax (W), vmpp (V), impp (A), voc (V), isc (A), coeffVoc (%/°C), coeffIsc (%/°C), irm (A - reverse current withstand, e.g. 15), irradiance (W/m²)
+        // For PANELS: pmax (W), vmpp (V), impp (A), voc (V), isc (A), coeffVoc (%/°C), coeffIsc (%/°C), irm (A - reverse current withstand, e.g. 15), irradiance (W/m²), panelWeightKg (kg), panelLengthMm (mm), panelWidthMm (mm), panelAreaM2 (m²)
         // For INVERTERS: pac (W), vdcMax (V), idcMax (A), iscMax (A), nbMppt (number), mpptMin (V), mpptMax (V), vac (V), iacMax (A)
         // For DC PROTECTION (switch/disconnector and surge arrester): usec (V), ucpv (V), up (V), in (A for switch, kA for SPD), iscpv (A), inDisj (A), sensitivity (mA), uw (V - insulation withstand, e.g. 1000)
         // For AC PROTECTION (breaker and surge arrester): uoc (V), in (A), udis (V), inDisj (A), sensitivity (mA), uc (V), up (V), uw (V), type (I or II)
@@ -38,7 +39,7 @@ export async function scanDatasheet(fileBuffer, fileName) {
 
     // Use Gemini API with direct file input
     const model = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       generationConfig: {
         responseMimeType: 'application/json',
       },

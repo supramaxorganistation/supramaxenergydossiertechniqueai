@@ -131,9 +131,26 @@ const itemSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const equipmentSchema = new mongoose.Schema({
+  category: {
+    type: String,
+    enum: ['PANEL', 'INVERTER', 'PROTECTION_DC', 'PROTECTION_AC', 'CABLE'],
+    required: true
+  },
+  brand: String,
+  model: String,
+  specs: mongoose.Schema.Types.Mixed,
+  fileName: String,
+  fileUrl: String,
+  cableType: String,
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const User = mongoose.model('User', userSchema);
 const Dossier = mongoose.model('Dossier', dossierSchema);
 const Item = mongoose.model('Item', itemSchema);
+const Equipment = mongoose.model('Equipment', equipmentSchema);
 
 // ============================================
 // UTILITIES
@@ -387,7 +404,7 @@ app.get('/api/dossiers', authMiddleware, async (req, res) => {
 
 app.post('/api/dossiers', authMiddleware, authorizeRoles('admin', 'technician'), async (req, res) => {
   try {
-    const { customerDetails, pvSystemParams } = req.body;
+    const { customerDetails, pvSystemParams, equipment } = req.body;
 
     if (!customerDetails || !pvSystemParams) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -398,6 +415,7 @@ app.post('/api/dossiers', authMiddleware, authorizeRoles('admin', 'technician'),
     const newDossier = await Dossier.create({
       customerDetails,
       pvSystemParams,
+      equipment: equipment || {},
       calculations,
       createdBy: req.user.id
     });
@@ -440,20 +458,22 @@ app.put('/api/dossiers/:id', authMiddleware, authorizeRoles('admin', 'technician
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const { customerDetails, pvSystemParams, status, assignedTechnician } = req.body;
+    const { customerDetails, pvSystemParams, status, assignedTechnician, equipment } = req.body;
 
     if (customerDetails) dossier.customerDetails = customerDetails;
     if (pvSystemParams) {
       dossier.pvSystemParams = pvSystemParams;
       dossier.calculations = calculatePVMetrics(pvSystemParams);
     }
+    if (equipment) dossier.equipment = equipment;
     if (status) dossier.status = status;
     if (assignedTechnician && req.user.role === 'admin') dossier.assignedTechnician = assignedTechnician;
     dossier.updatedAt = new Date();
 
     const updated = await dossier.save();
-    const populated = await updated.populate('createdBy', 'name email').populate('assignedTechnician', 'name email');
-    res.json(populated);
+    await updated.populate('createdBy', 'name email');
+    await updated.populate('assignedTechnician', 'name email');
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -610,6 +630,81 @@ app.get('/api/dossiers/:id/compliance', authMiddleware, async (req, res) => {
 
     const complianceReport = computeStegCompliance(dossier);
     res.json(complianceReport);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ============================================
+// EQUIPMENT CATALOG (datasheets + extracted specs)
+// ============================================
+
+app.post('/api/equipment/scan', authMiddleware, upload.single('datasheet'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No datasheet PDF uploaded' });
+    }
+
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const scannedData = await scanDatasheet(fileBuffer, req.file.originalname);
+
+    if (!scannedData.success) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({ message: 'Failed to scan datasheet', error: scannedData.error });
+    }
+
+    const validCategories = ['PANEL', 'INVERTER', 'PROTECTION_DC', 'PROTECTION_AC', 'CABLE'];
+    if (!validCategories.includes(scannedData.category)) {
+      fs.unlinkSync(req.file.path);
+      return res.status(400).json({
+        message: "Le document ne semble pas être une fiche technique d'équipement (panneau, onduleur, protection ou câble).",
+        category: scannedData.category
+      });
+    }
+
+    const equipment = await Equipment.create({
+      category: scannedData.category,
+      brand: scannedData.brand,
+      model: scannedData.model,
+      specs: scannedData.specs,
+      fileName: req.file.originalname,
+      fileUrl: `/uploads/${req.file.filename}`,
+      cableType: req.body.cableType || null,
+      createdBy: req.user.id
+    });
+
+    res.status(201).json({ message: 'Equipment saved to catalog', equipment, scannedData });
+  } catch (error) {
+    console.error('Equipment scan error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/equipment', authMiddleware, async (req, res) => {
+  try {
+    const items = await Equipment.find()
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete('/api/equipment/:id', authMiddleware, authorizeRoles('admin', 'technician'), async (req, res) => {
+  try {
+    const equipment = await Equipment.findById(req.params.id);
+    if (!equipment) {
+      return res.status(404).json({ message: 'Equipment not found' });
+    }
+
+    const filePath = path.join('uploads', equipment.fileUrl.split('/').pop());
+    if (equipment.fileUrl && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await Equipment.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Equipment deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

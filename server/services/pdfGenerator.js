@@ -30,7 +30,7 @@ export async function generateStegPDF(dossierData, complianceReport) {
     });
 
     await browser.close();
-    return pdfBuffer;
+    return Buffer.from(pdfBuffer);
   } catch (error) {
     console.error('PDF generation error:', error);
     throw error;

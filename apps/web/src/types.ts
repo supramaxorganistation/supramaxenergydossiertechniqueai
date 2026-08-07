@@ -61,6 +61,21 @@ export type Equipment = {
   acCable?: EquipmentItem;
 };
 
+export type EquipmentCategory = 'PANEL' | 'INVERTER' | 'PROTECTION_DC' | 'PROTECTION_AC' | 'CABLE';
+
+export type CatalogEquipment = {
+  _id: string;
+  category: EquipmentCategory;
+  brand?: string;
+  model?: string;
+  specs?: EquipmentSpecs;
+  fileName?: string;
+  fileUrl?: string;
+  cableType?: 'AC' | 'DC';
+  createdBy?: { _id?: string; name: string; email: string };
+  createdAt?: string;
+};
+
 export type DossierDocument = {
   fileName: string;
   fileUrl: string;
