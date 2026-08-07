@@ -24,16 +24,16 @@ export async function scanDatasheet(fileBuffer, fileName) {
       "brand": "manufacturer name",
       "model": "model number",
       "specs": {
-        // For PANELS: pmax (W), vmpp (V), impp (A), voc (V), isc (A), coeffVoc (V/°C or %), coeffIsc (mA/°C or %), irradiance (W/m²)
+        // For PANELS: pmax (W), vmpp (V), impp (A), voc (V), isc (A), coeffVoc (%/°C), coeffIsc (%/°C), irm (A - reverse current withstand, e.g. 15), irradiance (W/m²)
         // For INVERTERS: pac (W), vdcMax (V), idcMax (A), iscMax (A), nbMppt (number), mpptMin (V), mpptMax (V), vac (V), iacMax (A)
-        // For DC PROTECTION: ucpv (V), up (V), in (A), iscpv (A), udis (V), inDisj (A), sensitivity (mA)
-        // For AC PROTECTION: uoc (V), in (A), udis (V), inDisj (A), sensitivity (mA)
-        // For CABLES: section (mm²), iz (A), material (Cu|Al), voltageRating (V), length (m), color
+        // For DC PROTECTION (switch/disconnector and surge arrester): usec (V), ucpv (V), up (V), in (A for switch, kA for SPD), iscpv (A), inDisj (A), sensitivity (mA), uw (V - insulation withstand, e.g. 1000)
+        // For AC PROTECTION (breaker and surge arrester): uoc (V), in (A), udis (V), inDisj (A), sensitivity (mA), uc (V), up (V), uw (V), type (I or II)
+        // For CABLES: section (mm²), iz (A), material (Cu|Al), insulation (PVC|PR|XLPE), voltageRating (V), length (m), color
       }
     }
     
-    Extract only numeric values and convert % coefficients to decimal form (e.g., -0.25%/°C = -0.0025).
-    If a specification is not found, use null.
+    Temperature coefficients: express them in %/°C (e.g. -0.25 means -0.25%/°C). Do NOT convert to decimals.
+    Extract only numeric values. If a specification is not found, use null.
     Return ONLY valid JSON, no additional text.`;
 
     // Use Gemini API with direct file input

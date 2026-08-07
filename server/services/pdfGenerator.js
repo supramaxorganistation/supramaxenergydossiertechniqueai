@@ -42,7 +42,7 @@ export async function generateStegPDF(dossierData, complianceReport) {
  */
 export function generateStegHTML(dossierData, complianceReport) {
   const { customerDetails, pvSystemParams, equipment, status } = dossierData;
-  const { parameters, compatibility, cableAnalysis, windAnalysis, summary } = complianceReport;
+  const { parameters, compatibility, protections, cableAnalysis, windAnalysis, summary } = complianceReport;
 
   const generatedDate = new Date().toLocaleDateString('fr-FR', {
     year: 'numeric',
@@ -428,7 +428,23 @@ export function generateStegHTML(dossierData, complianceReport) {
       <div class="formula">Ns_min = ${compatibility?.stringComputation?.nsMin || '-'}</div>
       <div style="margin-top: 5px;">Configuration: ${compatibility?.stringComputation?.currentSelection || '-'}</div>
     </div>
+    <div class="calc-card">
+      <h4>Nombre Optimal de Panneaux (Ns_optimal)</h4>
+      <div class="formula">Ns_optimal = floor(Umpptmax / Vmpp(-10°C))</div>
+      <div class="formula">Ns_optimal = ${compatibility?.stringComputation?.nsOpt || '-'}</div>
+      <div style="margin-top: 5px;">Chaînes en parallèle max/opt: <strong>Np_max ${compatibility?.stringComputation?.npMax ?? '-'}</strong> / <strong>Np_opt ${compatibility?.stringComputation?.npOpt ?? '-'}</strong></div>
+    </div>
   </div>
+
+  <h2>Chaînes en Parallèle & Fusibles</h2>
+  <table>
+    <tr><th>Paramètre</th><th>Valeur</th></tr>
+    <tr><td>Npmax (Icc onduleur / Isc(85°C)):</td><td>${compatibility?.stringComputation?.npMax ?? '-'}</td></tr>
+    <tr><td>Npoptimal (Idcmax / Imp(85°C)):</td><td>${compatibility?.stringComputation?.npOpt ?? '-'}</td></tr>
+    <tr><td>Ncmax (1 + IRM/Isc STC):</td><td>${compatibility?.maxStringsParallel?.ncmax ?? '-'}</td></tr>
+    <tr><td>Npmax protection (0,5 × (1 + IRM/Iscmax)):</td><td>${compatibility?.maxStringsParallel?.npmaxProtection ?? '-'}</td></tr>
+    <tr><td>Conclusion:</td><td>${compatibility?.maxStringsParallel?.note || '-'}</td></tr>
+  </table>
   
   <h2>Ratio de Puissance</h2>
   <p>Vérification de la compatibilité: 0.9 ≤ (P_PV / P_AC) ≤ 1.3</p>
@@ -460,22 +476,32 @@ export function generateStegHTML(dossierData, complianceReport) {
 <div class="page-break">
   <h1>V. DIMENSIONNEMENT PROTECTIONS DC</h1>
   
-  <h2>Fusibles DC Chaîne</h2>
-  <p>Courant de conception chaîne PV:</p>
+  <h2>Interrupteur-Sectionneur DC</h2>
+  <p>Conditions STEG : Usec &gt; Voc(-10 °C) et Isec &gt; 1,25 × Isc champ</p>
   <table>
-    <tr><th>Paramètre</th><th>Valeur</th></tr>
-    <tr><td>Courant MPP (Impp):</td><td>-</td></tr>
-    <tr><td>Courant de conception (1.25 × Impp):</td><td>-</td></tr>
-    <tr><td>Fusible recommandé (In):</td><td>${compatibility?.stringComputation?.impp || '-'} A</td></tr>
+    <tr><th>Paramètre</th><th>Requis</th><th>Dispositif</th></tr>
+    <tr><td>Tension (V):</td><td>${protections?.dcSwitch?.usecRequired ?? '-'} V</td><td>${protections?.dcSwitch?.selectedUsec ?? '-'}</td></tr>
+    <tr><td>Courant (A):</td><td>${protections?.dcSwitch?.isecRequired ?? '-'} A</td><td>${protections?.dcSwitch?.selectedIsec ?? '-'}</td></tr>
+    <tr><td>Statut:</td><td colspan="2">
+      <span class="compliance-status ${protections?.dcSwitch?.compliant ? 'status-ok' : 'status-warning'}">
+        ${protections?.dcSwitch?.message || '-'}
+      </span>
+    </td></tr>
   </table>
   
-  <h2>Protection Surcharge / Surtension DC</h2>
-  <p>Sélection des appareils de protection:</p>
+  <h2>Parafoudre DC (Type II)</h2>
+  <p>Conditions : Ucpv &gt; 1,2 × Uoc STC, Up &lt; 0,8 × Uw, In &gt; 5 kA, Iscpv &gt; 1,25 × Isc</p>
   <table>
-    <tr><th>Appareil</th><th>Calibre</th><th>Norme</th></tr>
-    <tr><td>Fusibles Chaîne</td><td>${equipment?.dcProtection?.specs?.in || '-'} A</td><td>IEC 60269</td></tr>
-    <tr><td>Protection Surcharge</td><td>-</td><td>NF C 15-100</td></tr>
-    <tr><td>Parafoudre DC</td><td>${equipment?.dcProtection?.specs?.up || '-'} V</td><td>IEC 61643-1</td></tr>
+    <tr><th>Paramètre</th><th>Requis</th><th>Dispositif</th></tr>
+    <tr><td>Ucpv (V):</td><td>&gt; ${protections?.spdDc?.ucpvRequired ?? '-'}</td><td>${protections?.spdDc?.selectedUcpv ?? '-'}</td></tr>
+    <tr><td>Up (V):</td><td>&lt; ${protections?.spdDc?.upLimit ?? '-'}</td><td>${protections?.spdDc?.selectedUp ?? '-'}</td></tr>
+    <tr><td>In (kA):</td><td>&gt; ${protections?.spdDc?.inRequired ?? '-'}</td><td>${protections?.spdDc?.selectedIn ?? '-'}</td></tr>
+    <tr><td>Iscpv (A):</td><td>&gt; ${protections?.spdDc?.iscpvRequired ?? '-'}</td><td>${protections?.spdDc?.selectedIscpv ?? '-'}</td></tr>
+    <tr><td>Statut:</td><td colspan="2">
+      <span class="compliance-status ${protections?.spdDc?.compliant ? 'status-ok' : 'status-warning'}">
+        ${protections?.spdDc?.message || '-'}
+      </span>
+    </td></tr>
   </table>
 </div>
 
@@ -483,12 +509,34 @@ export function generateStegHTML(dossierData, complianceReport) {
 <div class="page-break">
   <h1>VI. DIMENSIONNEMENT PROTECTIONS AC</h1>
   
-  <h2>Protection Côté AC</h2>
+  <h2>Disjoncteur Différentiel AC</h2>
+  <p>Conditions : Imax onduleur ≤ Ie ≤ Iz' câble AC, sensibilité 30 mA</p>
   <table>
-    <tr><th>Appareil</th><th>Calibre</th><th>Fonction</th></tr>
-    <tr><td>Disjoncteur AC</td><td>${equipment?.acProtection?.specs?.in || '-'} A</td><td>Protection surcharge/court-circuit</td></tr>
-    <tr><td>Parafoudre AC</td><td>${equipment?.acProtection?.specs?.up || '-'} V</td><td>Protection surtension</td></tr>
-    <tr><td>Dispositif Différentiel</td><td>30 mA</td><td>Protection personne</td></tr>
+    <tr><th>Paramètre</th><th>Valeur</th></tr>
+    <tr><td>Courant max onduleur (A):</td><td>${protections?.acBreaker?.ieMin ?? '-'}</td></tr>
+    <tr><td>Iz' câble AC (A):</td><td>${protections?.acBreaker?.ieMax ?? '-'}</td></tr>
+    <tr><td>Calibre recommandé (A):</td><td><strong>${protections?.acBreaker?.recommended ?? '-'} A</strong></td></tr>
+    <tr><td>Sensibilité:</td><td>30 mA</td></tr>
+    <tr><td>Dispositif retenu:</td><td>${protections?.acBreaker?.selectedIn ?? '-'} A</td></tr>
+    <tr><td>Statut:</td><td>
+      <span class="compliance-status ${protections?.acBreaker?.compliant ? 'status-ok' : 'status-warning'}">
+        ${protections?.acBreaker?.message || '-'}
+      </span>
+    </td></tr>
+  </table>
+  
+  <h2>Parafoudre AC (Type I ou II)</h2>
+  <p>Conditions : Uc &gt; 1,1 × Ue, Up &lt; 0,8 × Uw, In &gt; 5 kA</p>
+  <table>
+    <tr><th>Paramètre</th><th>Requis</th><th>Dispositif</th></tr>
+    <tr><td>Uc (V):</td><td>&gt; ${protections?.spdAc?.ucRequired ?? '-'}</td><td>${protections?.spdAc?.selectedUc ?? '-'}</td></tr>
+    <tr><td>Up (V):</td><td>&lt; ${protections?.spdAc?.upLimit ?? '-'}</td><td>${protections?.spdAc?.selectedUp ?? '-'}</td></tr>
+    <tr><td>In (kA):</td><td>&gt; ${protections?.spdAc?.inRequired ?? '-'}</td><td>${protections?.spdAc?.selectedIn ?? '-'}</td></tr>
+    <tr><td>Statut:</td><td colspan="2">
+      <span class="compliance-status ${protections?.spdAc?.compliant ? 'status-ok' : 'status-warning'}">
+        ${protections?.spdAc?.message || '-'}
+      </span>
+    </td></tr>
   </table>
   
   <h2>Coordination des Protections</h2>
@@ -504,12 +552,14 @@ export function generateStegHTML(dossierData, complianceReport) {
     <tr><th>Paramètre</th><th>Valeur</th><th>Norme</th></tr>
     <tr><td>Longueur:</td><td>${cableAnalysis?.dc?.length} m</td><td>-</td></tr>
     <tr><td>Section:</td><td>${cableAnalysis?.dc?.section} mm²</td><td>NF C 15-100</td></tr>
-    <tr><td>Courant nominal (Iz):</td><td>${cableAnalysis?.dc?.iz} A</td><td>-</td></tr>
-    <tr><td>Courant MPP:</td><td>${cableAnalysis?.dc?.impp.toFixed(2)} A</td><td>-</td></tr>
+    <tr><td>Courant de service Ib (1,25 × Isc):</td><td>${cableAnalysis?.dc?.ib} A</td><td>-</td></tr>
+    <tr><td>Iz (fiche technique):</td><td>${cableAnalysis?.dc?.iz} A</td><td>-</td></tr>
+    <tr><td>Iz' = Iz × K1×K2×K3×K4:</td><td><strong>${cableAnalysis?.dc?.izPrime} A</strong></td><td>${cableAnalysis?.dc?.kFactors?.k1} × ${cableAnalysis?.dc?.kFactors?.k2} × ${cableAnalysis?.dc?.kFactors?.k3} × ${cableAnalysis?.dc?.kFactors?.k4}</td></tr>
+    <tr><td>Section minimale recommandée:</td><td><strong>${cableAnalysis?.dc?.recommendedSection} mm²</strong></td><td>Cuivre, ${cableAnalysis?.dc?.insulation}</td></tr>
   </table>
   
   <h2>Chute de Tension DC</h2>
-  <p>Formule: ΔU% = (200 × ρ × L × I) / (S × U)</p>
+  <p>Formule: ΔU% = (2 × ρ × L × I) / (S × U) × 100</p>
   <table>
     <tr><th>Paramètre</th><th>Valeur</th></tr>
     <tr><td>Tension MPP totale:</td><td>${cableAnalysis?.dc?.vmppTotal.toFixed(2)} V</td></tr>
@@ -527,8 +577,11 @@ export function generateStegHTML(dossierData, complianceReport) {
     <tr><th>Paramètre</th><th>Valeur</th><th>Norme</th></tr>
     <tr><td>Longueur:</td><td>${cableAnalysis?.ac?.length} m</td><td>-</td></tr>
     <tr><td>Section:</td><td>${cableAnalysis?.ac?.section} mm²</td><td>NF C 15-100</td></tr>
-    <tr><td>Tension réseau:</td><td>${cableAnalysis?.ac?.vGrid} V</td><td>-</td></tr>
-    <tr><td>Courant max:</td><td>${cableAnalysis?.ac?.iacMax} A</td><td>-</td></tr>
+    <tr><td>Tension réseau:</td><td>${cableAnalysis?.ac?.vGrid} V (${cableAnalysis?.ac?.phase === 'tri' ? 'Triphasé' : 'Monophasé'})</td><td>-</td></tr>
+    <tr><td>Courant max onduleur (Ib):</td><td>${cableAnalysis?.ac?.ib} A</td><td>-</td></tr>
+    <tr><td>Iz (fiche technique):</td><td>${cableAnalysis?.ac?.iz} A</td><td>-</td></tr>
+    <tr><td>Iz' = Iz × K1×K2×K3×K4:</td><td><strong>${cableAnalysis?.ac?.izPrime} A</strong></td><td>${cableAnalysis?.ac?.kFactors?.k1} × ${cableAnalysis?.ac?.kFactors?.k2} × ${cableAnalysis?.ac?.kFactors?.k3} × ${cableAnalysis?.ac?.kFactors?.k4}</td></tr>
+    <tr><td>Section minimale recommandée:</td><td><strong>${cableAnalysis?.ac?.recommendedSection} mm²</strong></td><td>Cuivre, ${cableAnalysis?.ac?.insulation}</td></tr>
   </table>
   
   <h2>Chute de Tension AC</h2>
@@ -566,8 +619,8 @@ export function generateStegHTML(dossierData, complianceReport) {
 <div class="page-break">
   <h1>IX. STRUCTURE & NOTE DE CALCUL VENT</h1>
   
-  <h2>Résistance au Vent (Vitesse 120 km/h = 33.3 m/s)</h2>
-  <p>Pression dynamique: q = 625 Pa (pour 120 km/h)</p>
+  <h2>Résistance au Vent (Vitesse ${windAnalysis?.windSpeedKmh || 120} km/h)</h2>
+  <p>Pression dynamique: q = ½ × ρ × V² = ${windAnalysis?.windPressure || '-'} Pa</p>
   
   <table>
     <tr><th>Paramètre</th><th>Valeur</th><th>Unité</th></tr>
@@ -575,18 +628,21 @@ export function generateStegHTML(dossierData, complianceReport) {
     <tr><td>Surface panneaux:</td><td>${windAnalysis?.panelArea}</td><td>m²</td></tr>
     <tr><td>Force du vent:</td><td>${windAnalysis?.windForce.toFixed(2)}</td><td>N</td></tr>
     <tr><td>Poids structure + panneaux:</td><td>${windAnalysis?.panelWeightN.toFixed(2)}</td><td>N</td></tr>
-    <tr><td>Ratio stabilité:</td><td>${(windAnalysis?.panelWeightN / windAnalysis?.windForce).toFixed(2)}</td><td>-</td></tr>
+    <tr><td>Ballast installé:</td><td>${windAnalysis?.ballastWeightKg}</td><td>kg</td></tr>
+    <tr><td>Ballast requis (si besoin):</td><td><strong>${windAnalysis?.requiredBallastKg} kg</strong></td><td>kg</td></tr>
+    <tr><td>Ratio stabilité:</td><td>${windAnalysis?.stabilityRatio.toFixed(2)}</td><td>-</td></tr>
   </table>
   
   <h2>Vérification d'Équilibre</h2>
-  <p>Contrôle moment: Moment poids ≥ Moment vent</p>
+  <p>Condition STEG: (Fpoids − 339 × S) × D ≥ 2 × 196 × S × H</p>
+  <p>Membre gauche: ${windAnalysis?.formulaLeft.toFixed(2)} — Membre droit: ${windAnalysis?.formulaRight.toFixed(2)}</p>
   <div class="compliance-status ${windAnalysis?.compliant ? 'status-ok' : 'status-warning'}">
     ${windAnalysis?.message}
   </div>
   <p style="margin-top: 10px; font-size: 10px;">
     ${windAnalysis?.compliant 
       ? 'La structure est stable aux conditions de vent extrême. Pas de ballast supplémentaire nécessaire.'
-      : 'La structure peut nécessiter un ballast supplémentaire. À vérifier avec le fournisseur de structure.'}
+      : `La structure nécessite un ballast supplémentaire (~${windAnalysis?.requiredBallastKg} kg). À vérifier avec le fournisseur de structure.`}
   </p>
 </div>
 
@@ -617,6 +673,16 @@ export function generateStegHTML(dossierData, complianceReport) {
       <td>Ratio puissance</td>
       <td>${summary?.powerCompliant ? '✓' : '✗'}</td>
       <td>Ratio: ${compatibility?.powerRatio?.ratio.toFixed(2) || '-'}</td>
+    </tr>
+    <tr>
+      <td>Protections DC</td>
+      <td>${summary?.dcProtectionCompliant ? '✓' : '✗'}</td>
+      <td>${protections?.dcSwitch?.message || '-'}</td>
+    </tr>
+    <tr>
+      <td>Protections AC</td>
+      <td>${summary?.acProtectionCompliant ? '✓' : '✗'}</td>
+      <td>${protections?.acBreaker?.message || '-'}</td>
     </tr>
     <tr>
       <td>Chute tension DC</td>

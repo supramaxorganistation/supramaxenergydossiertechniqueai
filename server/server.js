@@ -52,7 +52,25 @@ const dossierSchema = new mongoose.Schema({
     panelBrand: { type: String, required: true },
     inverterModel: { type: String, required: true },
     dcCableLength: { type: Number, default: 0 },
-    acCableLength: { type: Number, default: 0 }
+    acCableLength: { type: Number, default: 0 },
+    tmin: { type: Number, default: -10 },
+    tmax: { type: Number, default: 85 },
+    acPhase: { type: String, enum: ['mono', 'tri'], default: 'mono' },
+    dcCableMode: String,
+    dcCableGrouping: Number,
+    dcCableTemp: Number,
+    dcCableLayers: Number,
+    acCableMode: String,
+    acCableGrouping: Number,
+    acCableTemp: Number,
+    acCableLayers: Number,
+    panelAreaM2: Number,
+    panelWeightKg: Number,
+    structureWeightKg: Number,
+    ballastWeightKg: Number,
+    supportHeightM: Number,
+    ballastLeverM: Number,
+    windSpeedKmh: Number
   },
   equipment: {
     panel: {
@@ -192,7 +210,7 @@ app.get('/health', (req, res) => {
 
 app.post('/auth/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email and password are required' });
     }
@@ -207,7 +225,7 @@ app.post('/auth/register', async (req, res) => {
       name,
       email: email.toLowerCase(),
       passwordHash,
-      role: role || 'technician'
+      role: 'client'
     });
 
     res.status(201).json({
@@ -241,8 +259,102 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-app.get('/me', authMiddleware, (req, res) => {
-  res.json({ user: req.user });
+app.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ============================================
+// USER ROUTES (admin)
+// ============================================
+
+app.get('/api/users', authMiddleware, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    res.json(
+      users.map((u) => ({
+        _id: u._id,
+        id: u._id.toString(),
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        createdAt: u.createdAt
+      }))
+    );
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.put('/api/users/:id/role', authMiddleware, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { role } = req.body;
+    if (!['admin', 'technician', 'client'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (user._id.toString() === req.user.id) {
+      return res.status(400).json({ message: 'You cannot change your own role' });
+    }
+    user.role = role;
+    await user.save();
+    res.json({
+      _id: user._id,
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      createdAt: user.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/users', authMiddleware, authorizeRoles('admin'), async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
+    const normalizedRole = ['admin', 'technician', 'client'].includes(role) ? role : 'technician';
+
+    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      return res.status(409).json({ message: 'User already exists' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = await User.create({
+      name,
+      email: email.toLowerCase(),
+      passwordHash,
+      role: normalizedRole
+    });
+
+    res.status(201).json({
+      _id: newUser._id,
+      id: newUser._id.toString(),
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      createdAt: newUser.createdAt
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // ============================================
@@ -477,6 +589,27 @@ app.post('/api/dossiers/:id/scan-equipment', authMiddleware, upload.single('data
       scannedData,
       dossier: updated
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/dossiers/:id/compliance', authMiddleware, async (req, res) => {
+  try {
+    const dossier = await Dossier.findById(req.params.id)
+      .populate('createdBy', 'name email')
+      .populate('assignedTechnician', 'name email');
+
+    if (!dossier) {
+      return res.status(404).json({ message: 'Dossier not found' });
+    }
+
+    if (req.user.role === 'client' && dossier.createdBy._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const complianceReport = computeStegCompliance(dossier);
+    res.json(complianceReport);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
