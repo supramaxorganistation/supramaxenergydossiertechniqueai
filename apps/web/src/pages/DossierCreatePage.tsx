@@ -161,6 +161,53 @@ function num(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+function SectionScanner({
+  file,
+  busy,
+  onFile,
+  onScan,
+  showCableType,
+  cableType,
+  onCableType,
+}: {
+  file: File | null;
+  busy: boolean;
+  onFile: (f: File | null) => void;
+  onScan: () => void;
+  showCableType?: boolean;
+  cableType?: 'AC' | 'DC';
+  onCableType?: (t: 'AC' | 'DC') => void;
+}) {
+  return (
+    <div className="flex gap-8" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
+      <label className="btn btn-sm btn-ghost" style={{ cursor: 'pointer', margin: 0 }}>
+        {file ? '📄 ' + file.name : '📤 Fiche technique PDF'}
+        <input
+          type="file"
+          accept=".pdf,.png,.jpg,.jpeg"
+          style={{ display: 'none' }}
+          onChange={(e) => onFile(e.target.files?.[0] || null)}
+        />
+      </label>
+      {showCableType && (
+        <select
+          className="select"
+          style={{ width: 'auto', padding: '6px 8px' }}
+          value={cableType}
+          onChange={(e) => onCableType?.(e.target.value as 'AC' | 'DC')}
+          title="Type de câble"
+        >
+          <option value="DC">Câble DC</option>
+          <option value="AC">Câble AC</option>
+        </select>
+      )}
+      <button type="button" className="btn btn-sm btn-primary" disabled={!file || busy} onClick={onScan}>
+        {busy ? 'Analyse...' : 'Scanner & remplir'}
+      </button>
+    </div>
+  );
+}
+
 function buildEquipment(form: FormState): Equipment {
   const f = (v: string) => (v.trim() !== '' ? parseFloat(v) : undefined);
   const s = (v: string) => (v.trim() ? v.trim() : undefined);
@@ -261,9 +308,8 @@ export default function DossierCreatePage({
   const [error, setError] = useState('');
 
   const [catalog, setCatalog] = useState<CatalogEquipment[]>([]);
-  const [scanFile, setScanFile] = useState<File | null>(null);
-  const [scanCableType, setScanCableType] = useState<'AC' | 'DC'>('DC');
-  const [scanning, setScanning] = useState(false);
+  const [scans, setScans] = useState<Record<string, { file: File | null; busy: boolean }>>({});
+  const [cableType, setCableType] = useState<'AC' | 'DC'>('DC');
   const [scanNotice, setScanNotice] = useState('');
   const [scanError, setScanError] = useState('');
 
@@ -362,25 +408,28 @@ export default function DossierCreatePage({
     setForm((f) => ({ ...f, ...patch }));
   };
 
-  const handleScan = async () => {
-    if (!scanFile) return;
-    setScanning(true);
+  const setScanFile = (section: string, file: File | null) =>
+    setScans((s) => ({ ...s, [section]: { file, busy: s[section]?.busy ?? false } }));
+
+  const handleScan = async (section: string) => {
+    const file = scans[section]?.file;
+    if (!file) return;
+    setScans((s) => ({ ...s, [section]: { file, busy: true } }));
     setScanNotice('');
     setScanError('');
     try {
-      const res = await api.scanEquipment(scanFile, scanCableType);
+      const res = await api.scanEquipment(file, section === 'cable' ? cableType : undefined);
       const scanned = res.equipment;
       applyEquipment(scanned);
-      setScanFile(null);
+      setScans((s) => ({ ...s, [section]: { file: null, busy: false } }));
       setScanNotice(
-        `Fiche enregistrée : ${scanned.brand || ''} ${scanned.model || ''} (${CATEGORY_LABEL[scanned.category] || scanned.category}) — formulaire rempli automatiquement.`
+        `Fiche analysée : ${scanned.brand || ''} ${scanned.model || ''} (${CATEGORY_LABEL[scanned.category] || scanned.category}) — champs remplis automatiquement.`
       );
       const list = await api.listEquipment();
       setCatalog(list);
     } catch (err: any) {
+      setScans((s) => ({ ...s, [section]: { file, busy: false } }));
       setScanError(err.message || "Erreur lors de l'analyse");
-    } finally {
-      setScanning(false);
     }
   };
 
@@ -474,74 +523,25 @@ export default function DossierCreatePage({
       </div>
 
       <div className="card">
-        <h3 className="card-title">🤖 Scanner une fiche technique (remplissage auto)</h3>
-        <p className="card-subtitle">
-          Uploadez une fiche technique PDF (panneau, onduleur, protection DC/AC, câble) : elle est analysée
-          par IA, enregistrée dans la base, et les champs du composant correspondant sont remplis automatiquement.
-          Les équipements enregistrés sont réutilisables dans les prochains dossiers.
-        </p>
-        <div className="flex gap-8">
-          <label className="file-drop" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            {scanFile ? '📄 ' + scanFile.name : '📤 Choisir une fiche technique PDF'}
-            <input
-              type="file"
-              accept=".pdf,.png,.jpg,.jpeg"
-              style={{ display: 'none' }}
-              onChange={(e) => setScanFile(e.target.files?.[0] || null)}
-            />
-          </label>
-          <select
-            className="select"
-            style={{ width: 'auto' }}
-            value={scanCableType}
-            onChange={(e) => setScanCableType(e.target.value as 'AC' | 'DC')}
-            title="Type de câble (si la fiche est un câble)"
-          >
-            <option value="DC">Câble DC</option>
-            <option value="AC">Câble AC</option>
-          </select>
-          <button className="btn btn-primary" onClick={handleScan} disabled={!scanFile || scanning}>
-            {scanning ? 'Analyse...' : 'Scanner & remplir'}
-          </button>
-        </div>
-        {scanNotice && <div className="msg-box info mt-12">{scanNotice}</div>}
-        {scanError && <div className="msg-box error mt-12">{scanError}</div>}
-
-        <div className="form-section-title" style={{ marginTop: 20 }}>
-          🗂️ Équipements enregistrés (réutilisables)
-        </div>
-        {catalog.length === 0 ? (
-          <p className="card-subtitle" style={{ marginTop: 8 }}>
-            Aucun équipement enregistré pour le moment. Scannez une fiche technique ci-dessus.
-          </p>
-        ) : (
-          <ul style={{ listStyle: 'none' }}>
-            {catalog.map((item) => (
-              <li key={item._id} className="flex-between" style={{ padding: '10px 0', borderBottom: '1px solid var(--border, #eee)' }}>
-                <div>
-                  <strong>{item.brand || ''} {item.model || 'Sans modèle'}</strong>{' '}
-                  <span className="badge badge-blue" style={{ marginLeft: 6 }}>
-                    {CATEGORY_LABEL[item.category] || item.category}
-                  </span>
-                  {item.fileName && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.fileName}</div>}
-                </div>
-                <div className="flex gap-8">
-                  <button type="button" className="btn btn-sm btn-primary" onClick={() => handleUse(item)}>Utiliser</button>
-                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => handleDeleteEquipment(item._id)}>Suppr.</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="card">
         <h3 className="card-title">🔆 Système photovoltaïque</h3>
         {equipmentCount > 0 && (
           <div className="msg-box info mb-12">{equipmentCount} équipement(s) seront enregistrés avec ce dossier.</div>
         )}
+        {scanNotice && <div className="msg-box info mb-12">{scanNotice}</div>}
+        {scanError && <div className="msg-box error mb-12">{scanError}</div>}
+
+        <p className="card-subtitle">
+          Scannez la fiche technique de chaque composant : les champs de la section correspondante sont remplis
+          automatiquement et l'équipement est enregistré dans la base pour être réutilisé dans les prochains dossiers.
+        </p>
 
         <div className="form-section-title">Générateur PV</div>
+        <SectionScanner
+          file={scans.panel?.file ?? null}
+          busy={scans.panel?.busy ?? false}
+          onFile={(f) => setScanFile('panel', f)}
+          onScan={() => handleScan('panel')}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Puissance crête (kWc) *</label>
@@ -602,6 +602,12 @@ export default function DossierCreatePage({
         </div>
 
         <div className="form-section-title">Onduleur</div>
+        <SectionScanner
+          file={scans.inverter?.file ?? null}
+          busy={scans.inverter?.busy ?? false}
+          onFile={(f) => setScanFile('inverter', f)}
+          onScan={() => handleScan('inverter')}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Marque onduleur</label>
@@ -646,6 +652,12 @@ export default function DossierCreatePage({
         </div>
 
         <div className="form-section-title">Protections DC</div>
+        <SectionScanner
+          file={scans.protDc?.file ?? null}
+          busy={scans.protDc?.busy ?? false}
+          onFile={(f) => setScanFile('protDc', f)}
+          onScan={() => handleScan('protDc')}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Sectionneur — U (V)</label>
@@ -678,6 +690,12 @@ export default function DossierCreatePage({
         </div>
 
         <div className="form-section-title">Protections AC</div>
+        <SectionScanner
+          file={scans.protAc?.file ?? null}
+          busy={scans.protAc?.busy ?? false}
+          onFile={(f) => setScanFile('protAc', f)}
+          onScan={() => handleScan('protAc')}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Disjoncteur — In (A)</label>
@@ -706,6 +724,15 @@ export default function DossierCreatePage({
         </div>
 
         <div className="form-section-title">Câbles</div>
+        <SectionScanner
+          file={scans.cable?.file ?? null}
+          busy={scans.cable?.busy ?? false}
+          onFile={(f) => setScanFile('cable', f)}
+          onScan={() => handleScan('cable')}
+          showCableType
+          cableType={cableType}
+          onCableType={setCableType}
+        />
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Câble DC — section (mm²)</label>
@@ -812,6 +839,34 @@ export default function DossierCreatePage({
             {submitting ? 'Création...' : 'Créer le dossier'}
           </button>
         </div>
+      </div>
+
+      <div className="card">
+        <h3 className="card-title">🗂️ Équipements enregistrés (réutilisables)</h3>
+        {catalog.length === 0 ? (
+          <p className="card-subtitle">
+            Aucun équipement enregistré pour le moment. Scannez une fiche technique dans la section du composant
+            correspondant ci-dessus.
+          </p>
+        ) : (
+          <ul style={{ listStyle: 'none' }}>
+            {catalog.map((item) => (
+              <li key={item._id} className="flex-between" style={{ padding: '10px 0', borderBottom: '1px solid var(--border, #eee)' }}>
+                <div>
+                  <strong>{item.brand || ''} {item.model || 'Sans modèle'}</strong>{' '}
+                  <span className="badge badge-blue" style={{ marginLeft: 6 }}>
+                    {CATEGORY_LABEL[item.category] || item.category}
+                  </span>
+                  {item.fileName && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{item.fileName}</div>}
+                </div>
+                <div className="flex gap-8">
+                  <button type="button" className="btn btn-sm btn-primary" onClick={() => handleUse(item)}>Utiliser</button>
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => handleDeleteEquipment(item._id)}>Suppr.</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </form>
   );
