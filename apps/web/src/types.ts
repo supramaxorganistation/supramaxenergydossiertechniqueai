@@ -17,6 +17,9 @@ export type CustomerDetails = {
   phone: string;
   address: string;
   stegMeterRef: string;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  gpsAltitude?: number;
 };
 
 export type PVSystemParams = {

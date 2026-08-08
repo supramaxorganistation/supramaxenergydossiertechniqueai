@@ -153,6 +153,10 @@ export default function DossierDetailPage({
                 {kv('Téléphone', dossier.customerDetails.phone)}
                 {kv('Réf. compteur STEG', dossier.customerDetails.stegMeterRef)}
                 {kv('Adresse', dossier.customerDetails.address)}
+                {dossier.customerDetails.gpsLatitude != null && kv(
+                  'Coordonnées GPS',
+                  `${dossier.customerDetails.gpsLatitude}, ${dossier.customerDetails.gpsLongitude}${dossier.customerDetails.gpsAltitude != null ? ` (alt. ${dossier.customerDetails.gpsAltitude} m)` : ''}`
+                )}
                 {kv('Créé le', new Date(dossier.createdAt).toLocaleDateString('fr-FR'))}
                 {kv('Par', dossier.createdBy?.name)}
                 {kv('Technicien', dossier.assignedTechnician?.name || '—')}

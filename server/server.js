@@ -39,12 +39,15 @@ const userSchema = new mongoose.Schema({
 });
 
 const dossierSchema = new mongoose.Schema({
-  customerDetails: {
+    customerDetails: {
     name: { type: String, required: true },
     cin: { type: String, required: true },
     phone: { type: String, required: true },
     address: { type: String, required: true },
-    stegMeterRef: { type: String, required: true }
+    stegMeterRef: { type: String, required: true },
+    gpsLatitude: Number,
+    gpsLongitude: Number,
+    gpsAltitude: Number
   },
   pvSystemParams: {
     peakPowerKwc: { type: Number, required: true },
@@ -732,8 +735,8 @@ app.get('/api/dossiers/:id/export-pdf', authMiddleware, async (req, res) => {
     dossier.complianceReport = complianceReport;
     await dossier.save();
 
-    // Generate PDF
-    const pdfBuffer = await generateStegPDF(dossier, complianceReport);
+    // Generate PDF (annexes = documents téléversés du dossier)
+    const pdfBuffer = await generateStegPDF(dossier, complianceReport, dossier.documents || []);
 
     // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');

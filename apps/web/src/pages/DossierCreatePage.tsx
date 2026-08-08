@@ -8,6 +8,9 @@ type FormState = {
   customerPhone: string;
   customerAddress: string;
   stegMeterRef: string;
+  gpsLatitude: string;
+  gpsLongitude: string;
+  gpsAltitude: string;
 
   peakPowerKwc: string;
   panelCount: string;
@@ -81,6 +84,9 @@ const INITIAL: FormState = {
   customerPhone: '',
   customerAddress: '',
   stegMeterRef: '',
+  gpsLatitude: '',
+  gpsLongitude: '',
+  gpsAltitude: '',
 
   peakPowerKwc: '3',
   panelCount: '8',
@@ -462,6 +468,9 @@ export default function DossierCreatePage({
           phone: form.customerPhone,
           address: form.customerAddress,
           stegMeterRef: form.stegMeterRef,
+          gpsLatitude: form.gpsLatitude ? parseFloat(form.gpsLatitude) : undefined,
+          gpsLongitude: form.gpsLongitude ? parseFloat(form.gpsLongitude) : undefined,
+          gpsAltitude: form.gpsAltitude ? parseFloat(form.gpsAltitude) : undefined,
         },
         pvSystemParams: {
           peakPowerKwc: parseFloat(form.peakPowerKwc) || 0,
@@ -518,6 +527,18 @@ export default function DossierCreatePage({
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Adresse *</label>
             <input className="input" value={form.customerAddress} onChange={(e) => set('customerAddress', e.target.value)} placeholder="Adresse de l'installation" required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">GPS Latitude</label>
+            <input className="input" value={form.gpsLatitude} onChange={(e) => set('gpsLatitude', e.target.value)} placeholder="Ex. 35.762692" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">GPS Longitude</label>
+            <input className="input" value={form.gpsLongitude} onChange={(e) => set('gpsLongitude', e.target.value)} placeholder="Ex. 10.593735" />
+          </div>
+          <div className="form-group">
+            <label className="form-label">GPS Altitude (m)</label>
+            <input className="input" value={form.gpsAltitude} onChange={(e) => set('gpsAltitude', e.target.value)} placeholder="Ex. 42" />
           </div>
         </div>
       </div>
