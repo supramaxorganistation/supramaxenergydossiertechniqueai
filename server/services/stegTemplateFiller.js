@@ -10,11 +10,9 @@ const TEMPLATE_PATH = path.join(ASSETS, 'templates', 'steg-dossier-technique.pdf
 const FONT_REGULAR = path.join(ASSETS, 'fonts', 'arial.ttf');
 const FONT_BOLD = path.join(ASSETS, 'fonts', 'arialbd.ttf');
 
-const PAGE_H = 842; // A4 hauteur (pt)
-
 function fmt(value, digits = 2) {
   const n = Number(value);
-  if (!Number.isFinite(n)) return '–';
+  if (!Number.isFinite(n)) return '?';
   let s = n.toFixed(digits);
   if (digits > 0) s = s.replace(/0+$/, '').replace(/\.$/, '');
   return s.replace('.', ',');
@@ -22,30 +20,26 @@ function fmt(value, digits = 2) {
 
 function fr0(v) {
   const n = Number(v);
-  return Number.isFinite(n) ? String(n.toFixed(0)) : '–';
+  return Number.isFinite(n) ? String(n.toFixed(0)) : '?';
 }
 
 /**
- * Carte de remplissage : génère les commandes de texte à dessiner sur le
- * gabarit STEG (21 pages). Les coordonnées proviennent de l'extraction pdfjs
- * du modèle (origine coin supérieur gauche) ; la conversion en coordonnées
- * pdf-lib (origine bas gauche) est faite lors de l'application.
- *
- * @param {Object} dossierData
- * @param {Object} report - computeStegCompliance
- * @returns {Array<{p:number,x:number,yTop:number,text:string,size:number,bold?:boolean}>}
+ * Carte de remplissage : g?n?re les commandes de texte ? dessiner sur le
+ * gabarit STEG (21 pages), positionn?es exactement selon le mod?le officiel.
  */
 export function buildFillCommands(dossierData, report) {
   const cmds = [];
-  const push = (p, x, yTop, text, size = 8.5, bold = false) => {
+  const push = (p, x, yTop, text, size = 11, bold = false) => {
     if (text == null || String(text).trim() === '') return;
     cmds.push({ p, x, yTop, text: String(text), size, bold });
   };
 
-  const { customerDetails = {}, pvSystemParams = {}, equipment = {}, createdBy } = dossierData;
-  const cd = customerDetails;
-  const ps = pvSystemParams || {};
-  const eq = equipment || {};
+  const dd = dossierData || {};
+  const cd = dd.customerDetails || {};
+  const ps = dd.pvSystemParams || {};
+  const eq = dd.equipment || {};
+  const createdBy = dd.createdBy;
+
   const panel = eq.panel?.specs || {};
   const inv = eq.inverter?.specs || {};
   const dcProt = eq.dcProtection?.specs || {};
@@ -53,10 +47,10 @@ export function buildFillCommands(dossierData, report) {
   const dcCable = eq.dcCable?.specs || {};
   const acCable = eq.acCable?.specs || {};
 
-  const installer = createdBy?.name || ps.installer || 'Eminence Energie';
-  const clientName = cd.name || '–';
-  const reference = cd.stegMeterRef || ps.stegMeterRef || '–';
-  const address = cd.address || ps.address || '–';
+  const installer = (typeof createdBy === 'object' && createdBy?.name) ? createdBy.name : (ps.installer || 'Eminence Energie');
+  const clientName = cd.name || '?';
+  const reference = cd.stegMeterRef || ps.stegMeterRef || '?';
+  const address = cd.address || ps.address || '?';
 
   const panelCount = ps.panelCount || 5;
   const pmax = panel.pmax || 610;
@@ -81,14 +75,13 @@ export function buildFillCommands(dossierData, report) {
   const acProtModel = eq.acProtection?.model || 'XLSPD-40 2P';
   const dcCableBrand = eq.dcCable?.brand || 'SUNKEAN';
   const acCableBrand = eq.acCable?.brand || 'CHAKIRA CABLE';
-  const dcCableRef = dcCable.section ? 'EN 50618 H1Z2Z2-K ' + fr0(dcCable.section) + ' mm²' : '***';
+  const dcCableRef = dcCable.section ? 'EN 50618 H1Z2Z2-K ' + fr0(dcCable.section) + ' mm?' : '***';
   const acCableRef = 'H05VV-F';
 
-  // ---- Valeurs moteur de calcul ----
+  // Calculations engine output
   const pt = report?.parameters?.panelTemperatureAdjustments || {};
   const sc = report?.compatibility?.stringComputation || {};
   const pr = report?.compatibility?.powerRatio || {};
-  const ms = report?.compatibility?.maxStringsParallel || {};
   const ds = report?.protections?.dcSwitch || {};
   const spdDc = report?.protections?.spdDc || {};
   const ab = report?.protections?.acBreaker || {};
@@ -111,47 +104,33 @@ export function buildFillCommands(dossierData, report) {
   const nsOpt = sc.nsOpt ?? 12;
   const nsMin = sc.nsMin ?? 1;
   const npMax = Math.max(sc.npMax ?? 1, 0);
-  const npOpt = Math.max(sc.npOpt ?? 1, 1);
   const ratio = pr.ratio ?? 1.02;
-  const pvPower = pr.pvPower ?? pmax * panelCount;
-  const acPower = pr.acPower ?? pac;
 
   const usec = dcProt.usec || ds.selectedUsec || 800;
-  const isec = ds.selectedIsec ?? dcProt.inDisj ?? 20;
-  const usecReq = ds.usecRequired ?? fmt(voc * panelCount, 1);
-  const isecReq = ds.isecRequired ?? fmt(1.25 * isc, 2);
+  const isec = ds.selectedIn || dcProt.isec || 20;
 
-  const spdDcU = spdDc.selectedUcpv ?? dcProt.ucpv ?? 600;
-  const spdDcUp = spdDc.selectedUp ?? dcProt.up ?? 2800;
-  const spdDcIn = spdDc.selectedIn ?? dcProt.in ?? 20;
-  const spdDcIsc = spdDc.selectedIscpv ?? dcProt.iscpv ?? 1000;
-  const spdDcUReq = spdDc.ucpvRequired ?? fmt(1.2 * voc * panelCount, 0);
-  const spdDcUpLimit = spdDc.upLimit ?? fmt(0.8 * (dcProt.uw || 6000), 0);
+  const spdDcU = spdDc.selectedUcpv || 1000;
+  const spdDcUp = spdDc.selectedUp || 3.8;
+  const spdDcIn = spdDc.selectedIn || 20;
+  const spdDcIsc = spdDc.selectedIscpv || 1000;
 
-  const inDisj = acProt.inDisj || ab.recommended || 16;
-  const ieMin = inv.iacMax || ab.ieMin || 14.3;
-  const izAcCable = cac.iz ?? 42;
-  const sensi = ab.sensitivityA ? Math.round(ab.sensitivityA * 1000) : 30;
+  const inDisj = ab.selectedIn || acProt.iac || 20;
+  const sensi = ab.selectedSensitivity || acProt.sensi || 30;
 
-  const spdAcU = spdAc.selectedUc ?? acProt.uc ?? 275;
-  const spdAcUp = spdAc.selectedUp ?? acProt.up ?? 1000;
-  const spdAcIn = spdAc.selectedIn ?? acProt.in ?? 20;
-  const spdAcUReq = spdAc.ucRequired ?? Math.round(1.1 * vac);
-  const spdAcUpLimit = spdAc.upLimit ?? Math.round(0.8 * (acProt.uw || 1500));
+  const spdAcU = spdAc.selectedUc || 275;
+  const spdAcUp = spdAc.selectedUp || 1.5;
+  const spdAcIn = spdAc.selectedIn || 20;
 
-  // Câbles DC
-  const dcIz = cdc.iz ?? dcCable.iz ?? 42;
-  const dcSection = cdc.section ?? dcCable.section ?? 4;
-  const dcIzPrime = cdc.izPrime ?? 34.44;
-  const dcIb = cdc.ib ?? fmt(1.25 * isc, 2);
-  const dcK = cdc.kFactors || {};
-  const dcL = cdc.length ?? ps.dcCableLength ?? 14;
-  const dcRho = 0.02314;
-  const dcUmp = vmpp * panelCount;
+  const dcIz = cdc.iz ?? dcCable.iz ?? 41;
+  const dcSection = cdc.section ?? dcCable.section ?? 6;
+  const dcIzPrime = cdc.izPrime ?? 32.8;
+  const dcIb = cdc.ib ?? impp;
+  const dcL = ps.dcCableLength || 20;
+  const dcRho = 0.0198;
+  const dcUmp = panelCount * vmpp;
   const dcDropV = fmt((2 * dcRho * dcL * impp) / dcSection, 2);
   const dcDropP = fmt(((2 * dcRho * dcL * impp) / (dcSection * dcUmp)) * 100, 3);
 
-  // Câbles AC (deux tronçons)
   const acIz = cac.iz ?? acCable.iz ?? 42;
   const acSection = cac.section ?? acCable.section ?? 4;
   const acIzPrime = cac.izPrime ?? 18.9;
@@ -172,118 +151,68 @@ export function buildFillCommands(dossierData, report) {
   const dateStr = today.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
   // =====================================================================
-  // PAGE 1 : COUVERTURE
+  // PAGE 1 : PAGE DE COUVERTURE (exact template positioning)
   // =====================================================================
-  push(0, 74, 130, installer, 9, true);
-  const valX = 210;
-  push(0, valX, 444, clientName, 9);
-  push(0, valX, 467, reference, 9);
-  push(0, valX, 489, address, 9);
+  push(0, 163, 289, clientName, 12, true);
+  push(0, 163.6, 319, reference, 12, true);
+  push(0, 289, 348.5, address, 12);
   if (cd.gpsLatitude) {
-    push(
-      0, valX, 503,
-      'GPS : Lat ' + fmt(cd.gpsLatitude, 6) + ' - Lon ' + fmt(cd.gpsLongitude, 6) + (cd.gpsAltitude ? ' - Alt ' + fr0(cd.gpsAltitude) + ' m' : ''),
-      8
-    );
+    push(0, 174.6, 408.9, fmt(cd.gpsLatitude, 6), 12);
+    push(0, 183.4, 439.5, fmt(cd.gpsLongitude, 6), 12);
+    push(0, 175.6, 470.1, (cd.gpsAltitude ? fr0(cd.gpsAltitude) + ' m' : '42 m'), 12);
   }
-  push(0, valX, 512, peakLabel, 9);
-  push(0, valX, 535, installer, 9);
-  push(0, valX, 558, dateStr, 9);
-  push(0, valX, 581, '1.0', 9);
-
-  // =====================================================================
-  // PAGE 2 : SOMMAIRE
-  // =====================================================================
-  const toc = [
-    ['I. Introduction générale', 4],
-    ['II. Documentation de la Solution proposée', 4],
-    ['III. Equipements de la Solution proposée', 4],
-    ['IV. Caractéristiques Techniques des équipements choisis :', 5],
-    ['  1. Panneau', 5],
-    ['  2. Onduleur (s)', 5],
-    ['  3. Caractéristiques équipements DC et AC', 6],
-    ['  4. Compatibilité de l\u2019onduleur :', 6],
-    ['V. Dimensionnement Dispositifs de protection coté DC :', 9],
-    ['  1. Nombre maximal de chaînes en parallèle sans protection', 9],
-    ['  2. Fusible DC', 9],
-    ['  3. Interrupteur sectionneur DC', 10],
-    ['  4. Parafoudre DC', 10],
-    ['VI. Dimensionnement Dispositifs de protection coté AC :', 11],
-    ['  1. Disjoncteur (différentiel) AC :', 11],
-    ['  2. Parafoudre AC', 11],
-    ['VII. Dimensionnement Câble DC/AC', 12],
-    ['  1. Câbles DC', 12],
-    ['  2. Câbles AC', 15],
-    ['VIII. Description du câblage des panneaux et de la mise à la terre', 17],
-    ['IX. Description de la mise en œuvre de la structure', 18],
-    ['X. Système de comptage', 18],
-    ['ANNEXE IPV', 19],
-  ];
-  toc.forEach(([title, page], i) => {
-    const y = 228 + i * 15;
-    const x = title.startsWith('  ') ? 124 : 110;
-    const clean = title.replace(/^ {2}/, '');
-    push(1, x, y, clean, 9, true);
-    const titleLen = clean.length * 4.7;
-    const dots = Math.max(6, Math.round((500 - (x + titleLen)) / 3.5));
-    push(1, x + titleLen, y, '\u2026'.repeat(dots), 9);
-    push(1, 500, y, String(page), 9, true);
-  });
-  push(1, 71, 128, installer, 8, true);
-
-  // =====================================================================
-  // PAGES 2..21 : sigle installateur en en-tête
-  // =====================================================================
-  for (let p = 2; p <= 20; p++) push(p, 71, 130, installer, 8, true);
+  push(0, 162.5, 499.6, peakLabel, 12, true);
+  push(0, 172.6, 529.4, installer, 12, true);
+  push(0, 136.6, 559.1, dateStr, 12);
 
   // =====================================================================
   // PAGE 4 : I. Introduction + III. Equipements
   // =====================================================================
-  push(3, 107, 177, 'Dans le cadre de la production d\u2019énergie électrique, la société ' + installer + ' a procédé à l\u2019étude d\u2019une installation de production photovoltaïque raccordée au réseau basse tension de la STEG.', 8.5);
-  push(3, 107, 191, 'Le présent dossier technique, relatif à M. / Mme ' + clientName + ', ' + address + ', est destiné à la STEG pour l\u2019approbation de l\u2019installation ' + peakLabel + '.', 8.5);
-  push(3, 107, 205, 'Date prévisionnelle de mise en service : ' + dateStr + '.', 8.5);
+  push(3, 110.5, 167.3, clientName, 11, true);
+  push(3, 208.1, 205.3, address, 11);
 
-  const eqTable = [
-    [true, 'Modules', fr0(panelCount), panelBrand, panelModel],
-    [true, 'Onduleurs', '1', invBrand, invModel],
-    [false, 'Fusibles', '***', '***', '***'],
-    [true, 'Parafoudres DC', '1', dcProtBrand, dcProtModel],
-    [true, 'Interrupteurs Sectionneurs DC', '1', dcProtBrand, eq.dcProtection?.model2 || 'XL7-63 2P'],
-    [true, 'Parafoudre AC', '1', acProtBrand, acProtModel],
-    [false, 'Interrupteur sectionneur général', '***', '***', '***'],
+  // Table Equipements Section III
+  const eqCols = { nombre: 221.2, marque: 294.1, reference: 390.4 };
+  const eqTable1 = [
+    [true, String(panelCount), panelBrand, panelModel],
+    [true, '1', invBrand, invModel],
+    [false, '***', '***', '***'],
+    [true, '1', dcProtBrand, dcProtModel],
+    [true, '1', dcProtBrand, eq.dcProtection?.model2 || 'XL7-63 2P'],
+    [true, '1', acProtBrand, acProtModel],
   ];
-  const eqCols = { nombre: 255, marque: 342, reference: 438 };
-  eqTable.forEach(([fill, , nombre, marque, referenceCell], i) => {
-    const y = 602 + i * 14.5;
+  eqTable1.forEach(([fill, nombre, marque, referenceCell], i) => {
+    const y = 526.3 + i * 19.1;
     if (fill) {
-      push(3, eqCols.nombre, y, String(nombre), 8.5);
-      push(3, eqCols.marque, y, String(marque), 8.5);
-      push(3, eqCols.reference, y, String(referenceCell), 8.5);
+      push(3, eqCols.nombre, y, nombre, 11);
+      push(3, eqCols.marque, y, marque, 11);
+      push(3, eqCols.reference, y, referenceCell, 11);
     }
   });
 
   // =====================================================================
-  // PAGE 5 : suite équipements + IV.1 Panneau + IV.2 Onduleur
+  // PAGE 5 : Suite table + IV.1 Panneau + IV.2 Onduleur
   // =====================================================================
   const eqTable2 = [
-    [true, 'Disjoncteurs diff\u00e9rentiel AC 30mA', '1', 'SUNTREE', 'SCB8LE-63 C16'],
-    [false, 'Disjoncteur général AC', '***', '***', '***'],
-    [true, 'Câble DC', '***', dcCableBrand, dcCableRef],
-    [true, 'Câble AC', '***', acCableBrand, acCableRef],
-    [false, 'Câble de mise à la terre', '***', '***', '***'],
-    [false, 'Connecteur MC4', '***', '***', '***'],
-    [true, 'Répartiteurs', '1', 'NHC01series', '2*7'],
-    [false, 'Chemin de câble', '***', '***', '***'],
+    [true, '1', 'SUNTREE', 'SCB8LE-63 C16'],
+    [false, '***', '***', '***'],
+    [true, '***', dcCableBrand, dcCableRef],
+    [true, '***', acCableBrand, acCableRef],
+    [false, '***', '***', '***'],
+    [false, '***', '***', '***'],
+    [true, '1', 'NHC01series', '2*7'],
+    [false, '***', '***', '***'],
   ];
-  eqTable2.forEach(([fill, , nombre, marque, referenceCell], i) => {
-    const y = 127 + i * 14.5;
+  eqTable2.forEach(([fill, nombre, marque, referenceCell], i) => {
+    const y = 127.3 + i * 19.1;
     if (fill) {
-      push(4, eqCols.nombre, y, String(nombre), 8.5);
-      push(4, eqCols.marque, y, String(marque), 8.5);
-      push(4, eqCols.reference, y, String(referenceCell), 8.5);
+      push(4, eqCols.nombre, y, nombre, 11);
+      push(4, eqCols.marque, y, marque, 11);
+      push(4, eqCols.reference, y, referenceCell, 11);
     }
   });
 
+  // Panneau Specs (Right column at x=490)
   const panelRows = [
     [404, panelBrand],
     [418, panelModel],
@@ -292,11 +221,11 @@ export function buildFillCommands(dossierData, report) {
     [461, fmt(impp) + ' A'],
     [475, fmt(voc) + ' V'],
     [490, fmt(isc) + ' A'],
-    [504, fmt(coeffVoc, 2) + '%/°C'],
-    [518, fmt(coeffIsc, 2) + '%/°C'],
+    [504, fmt(coeffVoc, 2) + '%/?C'],
+    [518, fmt(coeffIsc, 2) + '%/?C'],
     [533, fr0(irm) + ' A'],
   ];
-  panelRows.forEach(([y, text]) => push(4, 490, y, text, 8.5));
+  panelRows.forEach(([y, text]) => push(4, 490, y, text, 9));
 
   push(4, 120, 628, '1', 9, true);
   push(4, 250, 628, String(panelCount), 9, true);
@@ -304,7 +233,7 @@ export function buildFillCommands(dossierData, report) {
   push(4, 470, 628, fmt(ratio, 2), 9, true);
 
   // =====================================================================
-  // PAGE 6 : Onduleur N°1 + Caractéristiques équipements DC/AC + Compatibilité
+  // PAGE 6 : Onduleur N?1 + Equipements DC/AC
   // =====================================================================
   push(5, 256, 149, invBrand + ' ' + invModel, 9, true);
   const invRows = [
@@ -325,103 +254,54 @@ export function buildFillCommands(dossierData, report) {
   invRows.forEach(([y, text]) => push(5, 495, y, text, 8.5));
 
   const dcAcRows = [
-    [458, 'Type 1 ou 2', '2'],
-    [472, 'Ucpv =', fmt(spdDcU) + ' V'],
-    [485, 'Up =', fmt(spdDcUp) + ' V'],
-    [499, 'In =', fmt(spdDcIn) + ' kA'],
-    [513, 'Iscpv =', fmt(spdDcIsc) + ' A'],
-    [527, 'Usec =', fmt(usec) + ' V'],
-    [541, 'Isec =', fmt(isec) + ' A'],
-    [555, 'Udis =', fmt(acProt.udis || vac) + ' V'],
-    [569, 'In =', fr0(inDisj) + ' A'],
-    [583, 'Pouvoir de coupure =', fmt(acProt.icn || 6) + ' kA'],
-    [597, 'Sensibilité =', fr0(sensi) + ' mA'],
-    [611, 'Type 1 ou 2', '2'],
-    [625, 'Ucpv =', fmt(spdAcU) + ' V'],
-    [639, 'Up =', fmt(spdAcUp) + ' V'],
-    [653, 'In =', fmt(spdAcIn) + ' kA'],
-    [681, 'Section', fr0(dcSection) + ' mm²'],
-    [695, 'Courant admissible Iz=', fr0(dcIz) + ' A'],
-    [709, 'Section', fr0(acSection) + ' mm²'],
-    [723, 'Courant admissible Iz=', fr0(acIz) + ' A'],
+    [458, '2'],
+    [472, fmt(spdDcU) + ' V'],
+    [485, fmt(spdDcUp) + ' V'],
+    [499, fmt(spdDcIn) + ' kA'],
+    [513, fmt(spdDcIsc) + ' A'],
+    [527, fmt(usec) + ' V'],
+    [541, fmt(isec) + ' A'],
+    [555, fmt(acProt.udis || vac) + ' V'],
+    [569, fr0(inDisj) + ' A'],
+    [583, fmt(acProt.icn || 6) + ' kA'],
+    [597, fr0(sensi) + ' mA'],
+    [611, '2'],
+    [625, fmt(spdAcU) + ' V'],
+    [639, fmt(spdAcUp) + ' V'],
+    [653, fmt(spdAcIn) + ' kA'],
+    [681, fr0(dcSection) + ' mm?'],
+    [695, fr0(dcIz) + ' A'],
+    [709, fr0(acSection) + ' mm?'],
+    [723, fr0(acIz) + ' A'],
   ];
-  dcAcRows.forEach(([y, label, value]) => push(5, 400, y, String(value), 8.5));
-
-  push(6, 420, 285, fmt(coeffVoc, 2) + '%/°C', 8.5);
-  push(6, 420, 326, fmt(coeffIsc, 2) + '%/°C', 8.5);
-  push(6, 420, 368, fmt(umpptMax, 0) + ' V', 8.5);
-  push(6, 420, 395, fmt(umpptMin, 0) + ' V', 8.5);
-  push(6, 420, 423, fmt(idcMax, 1) + ' A', 8.5);
-  push(6, 420, 451, fmt(iscMaxInv, 1) + ' A', 8.5);
-  push(6, 420, 478, fmt(isc, 2) + ' A', 8.5);
+  dcAcRows.forEach(([y, value]) => push(5, 400, y, String(value), 8.5));
 
   // =====================================================================
-  // PAGE 7 : Nsmax + application numérique
+  // PAGE 7 : Nsmax
   // =====================================================================
   const vocMin10 = pt.vocMin10 ?? fmt(voc * (1 + coeffVoc / 100 * ((pt.tmin ?? -10) - 25)), 2);
-  push(6, 90, 660, 'Voc(-10°C) = ' + fmt(voc, 2) + ' × (1 + ' + fmt(coeffVoc, 2) + '/100 × (' + fmt(pt.tmin ?? -10, 0) + ' - 25)) = ' + fmt(vocMin10, 2) + ' V', 8.5);
-  push(6, 90, 676, 'Nsmax = E¯( ' + fr0(udcMax) + ' / ' + fmt(vocMin10, 2) + ' ) = ' + fr0(nsMax) + ' panneaux', 8.5);
+  push(6, 90, 660, 'Voc(-10?C) = ' + fmt(voc, 2) + ' ? (1 + ' + fmt(coeffVoc, 2) + '/100 ? (' + fmt(pt.tmin ?? -10, 0) + ' - 25)) = ' + fmt(vocMin10, 2) + ' V', 8.5);
+  push(6, 90, 676, 'Nsmax = E?( ' + fr0(udcMax) + ' / ' + fmt(vocMin10, 2) + ' ) = ' + fr0(nsMax) + ' panneaux', 8.5);
 
   // =====================================================================
-  // PAGE 8 : Nsoptimal / Nsmin / Npmax / Npoptimal / compat puissance
+  // PAGE 8 : Nsoptimal / Nsmin / Npmax
   // =====================================================================
   const vmppMin10 = pt.vmppMin10 ?? fmt(vmpp * (1 + coeffVoc / 100 * ((pt.tmin ?? -10) - 25)), 2);
   const vmpp85 = pt.vmpp85 ?? fmt(vmpp * (1 + coeffVoc / 100 * ((pt.tmax ?? 85) - 25)), 2);
   const isc85 = pt.isc85 ?? fmt(isc * (1 + coeffIsc / 100 * ((pt.tmax ?? 85) - 25)), 2);
-  const impp85 = pt.impp85 ?? fmt(impp * (1 + coeffIsc / 100 * ((pt.tmax ?? 85) - 25)), 2);
 
-  push(7, 90, 228, 'Vmp(-10°C) = ' + fmt(vmpp, 2) + ' × (1 + ' + fmt(coeffVoc, 2) + '/100 × (-10 - 25)) = ' + fmt(vmppMin10, 2) + ' V', 8.5);
-  push(7, 90, 244, 'Nsoptimal = E¯( ' + fr0(umpptMax) + ' / ' + fmt(vmppMin10, 2) + ' ) = ' + fr0(nsOpt) + ' panneaux', 8.5);
-  push(7, 90, 352, 'Vmp(85°C) = ' + fmt(vmpp, 2) + ' × (1 + ' + fmt(coeffVoc, 2) + '/100 × (85 - 25)) = ' + fmt(vmpp85, 2) + ' V', 8.5);
-  push(7, 90, 368, 'Nsmin = E⁺( ' + fr0(umpptMin) + ' / ' + fmt(vmpp85, 2) + ' ) = ' + fr0(nsMin) + ' panneau', 8.5);
-  push(7, 90, 473, 'Isc(85°C) = ' + fmt(isc, 2) + ' × (1 + ' + fmt(coeffIsc, 2) + '/100 × (85 - 25)) = ' + fmt(isc85, 2) + ' A', 8.5);
-  push(7, 90, 489, 'Npmax = E¯( ' + fmt(iscMaxInv, 2) + ' / ' + fmt(isc85, 2) + ' ) = ' + fr0(npMax) + ' chaîne', 8.5);
-  push(7, 90, 595, 'Imp(85°C) = ' + fmt(impp, 2) + ' × (1 + ' + fmt(coeffIsc, 2) + '/100 × (85 - 25)) = ' + fmt(impp85, 2) + ' A', 8.5);
-  push(7, 90, 611, 'Npoptimal = E¯( ' + fmt(idcMax, 2) + ' / ' + fmt(impp85, 2) + ' ) = ' + fr0(npOpt) + ' chaîne', 8.5);
-  push(7, 150, 727, '0,9 ≤ ( ' + fr0(pvPower) + ' / ' + fr0(acPower) + ' ) = ' + fmt(ratio, 2) + ' ≤ 1,3  (valide)', 8.5, true);
+  push(7, 90, 228, 'Vmp(-10?C) = ' + fmt(vmpp, 2) + ' ? (1 + ' + fmt(coeffVoc, 2) + '/100 ? (-10 - 25)) = ' + fmt(vmppMin10, 2) + ' V', 8.5);
+  push(7, 90, 244, 'Nsoptimal = E?( ' + fr0(umpptMax) + ' / ' + fmt(vmppMin10, 2) + ' ) = ' + fr0(nsOpt) + ' panneaux', 8.5);
+  push(7, 90, 352, 'Vmp(85?C) = ' + fmt(vmpp, 2) + ' ? (1 + ' + fmt(coeffVoc, 2) + '/100 ? (85 - 25)) = ' + fmt(vmpp85, 2) + ' V', 8.5);
+  push(7, 90, 368, 'Nsmin = E?( ' + fr0(umpptMin) + ' / ' + fmt(vmpp85, 2) + ' ) = ' + fr0(nsMin) + ' panneau', 8.5);
+  push(7, 90, 473, 'Isc(85?C) = ' + fmt(isc, 2) + ' ? (1 + ' + fmt(coeffIsc, 2) + '/100 ? (85 - 25)) = ' + fmt(isc85, 2) + ' A', 8.5);
+  push(7, 90, 489, 'Npmax = E?( ' + fmt(iscMaxInv, 2) + ' / ' + fmt(isc85, 2) + ' ) = ' + fr0(npMax) + ' cha?ne', 8.5);
 
   // =====================================================================
-  // PAGE 9 : V.1 Ncmax + V.2 Fusible
-  // =====================================================================
-  push(8, 90, 355, 'Ncmax ≤ (1 + ' + fr0(ms.irm ?? irm) + ' / ' + fmt(isc, 2) + ') = ' + fmt(ms.ncmax ?? 1 + irm / isc, 2) + ' chaînes', 8.5);
-  push(8, 90, 370, 'Npmax ≤ 0,5 × (1 + ' + fr0(ms.irm ?? irm) + ' / ' + fmt(isc85, 2) + ') = ' + fr0(ms.npmaxProtection ?? 1) + ' chaîne', 8.5);
-
-  // =====================================================================
-  // PAGE 10 : V.3 Sectionneur DC + V.4 Parafoudre DC
-  // =====================================================================
-  push(9, 90, 300, 'Usec = ' + fr0(usec) + ' V > Voc(-10°C) champ PV = ' + fmt(usecReq, 1) + ' V (valide)', 8.5);
-  push(9, 90, 314, 'Isec = ' + fmt(isec, 2) + ' A > 1,25 × Isc champ PV = ' + fmt(isecReq, 2) + ' A (valide)', 8.5);
-  push(9, 340, 312, fmt(isec, 2), 8.5);
-  push(9, 336, 334, fr0(usec), 8.5);
-  push(9, 90, 377, 'Interrupteur sectionneur DC choisi : ' + dcProtBrand + ' ' + fr0(usec) + ' V Type 2, référence ' + (eq.dcProtection?.model2 || 'XL7-63 2P') + ' ou similaire.', 8.5, true);
-  push(9, 330, 635, fmt(spdDcU, 0) + ' V > ' + fr0(spdDcUReq) + ' V (valide)', 8.5);
-  push(9, 330, 657, fmt(spdDcUp, 0) + ' V < ' + fr0(spdDcUpLimit) + ' V (valide)', 8.5);
-  push(9, 330, 678, fr0(spdDcIn) + ' kA > 5 kA (valide)', 8.5);
-  push(9, 330, 700, fr0(spdDcIsc) + ' A > 1,25 × Isc = ' + fmt(1.25 * isc, 2) + ' A (valide)', 8.5);
-  push(9, 90, 722, 'Parafoudre DC choisi : ' + dcProtBrand + ' Type 2, référence ' + dcProtModel + ' ou similaire.', 8.5, true);
-
-  // =====================================================================
-  // PAGE 11 : VI.1 Disjoncteur AC + VI.2 Parafoudre AC
-  // =====================================================================
-  push(10, 90, 417, 'Imax onduleur = ' + fmt(ieMin, 1) + ' A ≤ Ie = ' + fr0(inDisj) + ' A ≤ Iz câble AC = ' + fr0(izAcCable) + ' A (valide)', 8.5);
-  push(10, 330, 342, fmt(acProt.udis || vac, 0) + ' V', 8.5);
-  push(10, 330, 364, fr0(inDisj) + ' A', 8.5);
-  push(10, 330, 386, fr0(sensi) + ' mA', 8.5);
-  push(10, 90, 451, 'Disjoncteur différentiel AC choisi : SUNTREE 2 pôles ' + fr0(inDisj) + ' A, ' + fr0(sensi) + ' mA, référence SCB8LE-63 C16 ou similaire.', 8.5, true);
-  push(10, 330, 708, fr0(spdAcU) + ' V > ' + fr0(spdAcUReq) + ' V (valide)', 8.5);
-  push(10, 330, 730, fr0(spdAcIn) + ' kA > 5 kA (valide)', 8.5);
-
-  // =====================================================================
-  // PAGE 12 : Parafoudre AC (Up) + conclusion
-  // =====================================================================
-  push(11, 310, 125, 'utilisé = ' + fmt(spdAcUp, 0) + ' V < ' + fr0(spdAcUpLimit) + ' V (valide)', 8.5);
-  push(11, 90, 168, 'Parafoudre AC choisi : ' + acProtBrand + ' Type 2, référence ' + acProtModel + ' 275 V ou similaire.', 8.5, true);
-
-  // =====================================================================
-  // PAGE 14 : Conclusion câble DC + chute de tension DC
+  // PAGE 14 : Conclusion c?ble DC
   // =====================================================================
   push(13, 130, 249, fmt(dcIb, 2) + ' A', 8.5);
-  push(13, 245, 224, fr0(dcSection) + ' mm²', 8.5);
+  push(13, 245, 224, fr0(dcSection) + ' mm?', 8.5);
   push(13, 340, 250, fr0(dcIz) + ' A', 8.5);
   push(13, 445, 250, fmt(dcIzPrime, 2) + ' A', 8.5);
 
@@ -434,18 +314,18 @@ export function buildFillCommands(dossierData, report) {
   push(13, 457, dcDropRow, dcDropV + ' V', 8.5);
   push(13, 513, dcDropRow, dcDropP + ' %', 8.5);
 
-  push(13, 150, 716, 'La Chute de Tension est Δu (%) = ' + dcDropP + ' % << 3 %.  (Valide le choix du câble).', 9, true);
+  push(13, 150, 716, 'La Chute de Tension est ?u (%) = ' + dcDropP + ' % << 3 %. (Valide le choix du c?ble).', 9, true);
 
   // =====================================================================
-  // PAGE 16 : Conclusion câble AC
+  // PAGE 16 : Conclusion c?ble AC
   // =====================================================================
   push(15, 130, 706, fmt(acI, 1) + ' A', 8.5);
-  push(15, 248, 693, fr0(acSection) + ' mm²', 8.5);
+  push(15, 248, 693, fr0(acSection) + ' mm?', 8.5);
   push(15, 370, 707, fmt(acIzPrime, 2) + ' A', 8.5);
   push(15, 453, 707, fr0(acIz) + ' A', 8.5);
 
   // =====================================================================
-  // PAGE 17 : Chute de tension AC (2 tronçons) + conclusion + VIII
+  // PAGE 17 : Chute de tension AC + conclusion
   // =====================================================================
   push(16, 110, 360, fr0(b), 8.5);
   push(16, 184, 360, fmt(dcRho, 5), 8.5);
@@ -471,25 +351,11 @@ export function buildFillCommands(dossierData, report) {
   push(16, 476, 383, acDrop2V + ' V', 8.5);
   push(16, 505, 383, acDrop2P + ' %', 8.5);
 
-  push(16, 90, 520, 'Δutot = Δu1 + Δu2 = ' + acDrop1P + ' + ' + acDrop2P + ' = ' + acDropTotal + ' % << 3 %.  (Valide le choix du câble).', 9, true);
-
-  push(16, 110, 700, 'Les modules photovoltaïques (' + fr0(panelCount) + ') sont raccordés en série (1 chaîne). Les câbles DC (double isolation, résistants aux UV) relient les chaînes au coffret de protection DC puis à l\u2019onduleur ; les câbles AC relient l\u2019onduleur au coffret AC puis au point d\u2019injection.', 8.5);
-  push(16, 110, 714, 'Mise à la terre : câbles de terre de section 10 mm², mise à la terre entre panneaux par rondelles bimétal et cosses de 6 mm², regard de terre rectangulaire 40 × 40, 3 piquets de 1,5 m distants de 35 cm. Valeur de terre vérifiée < 25 Ω.', 8.5);
-
-  // =====================================================================
-  // PAGE 18 : IX. Structure
-  // =====================================================================
-  push(17, 107, 208, 'La structure porteuse des panneaux est métallique en aluminium, adaptée au supportage sur toiture-terrasse : 3 triangles doubles en cornière aluminium 40/40, fixés sur 7 dalles en béton (37 kg chacune), liens entre triangles par rails Omega et pinces en aluminium, câbles en acier de section 6 mm² pour la bordure du toit. Résistance aux vents jusqu\u2019à ' + fmt(wa.windSpeedKmh ?? 120, 0) + ' km/h.', 8.5);
+  push(16, 90, 520, '?utot = ?u1 + ?u2 = ' + acDrop1P + ' + ' + acDrop2P + ' = ' + acDropTotal + ' % << 3 %. (Valide le choix du c?ble).', 9, true);
 
   return cmds;
 }
 
-/**
- * Applique les commandes sur le gabarit STEG et renvoie le PDF rempli (21 pages).
- * @param {Object} dossierData
- * @param {Object} complianceReport
- * @returns {Promise<Buffer>}
- */
 export async function fillStegTemplate(dossierData, complianceReport) {
   const templateBytes = fs.readFileSync(TEMPLATE_PATH);
   const pdfDoc = await PDFDocument.load(templateBytes, { ignoreEncryption: true });

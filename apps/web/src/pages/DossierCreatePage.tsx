@@ -447,6 +447,105 @@ export default function DossierCreatePage({
     setScanError('');
   };
 
+  const handleFillWithRandomData = () => {
+    const randomNames = ['Mounir Ben Ali', 'Sami Karray', 'Karim Mansouri', 'Amel Bouaziz', 'Youssef Trabelsi', 'Olfa Jaziri'];
+    const randomCities = ['Tunis', 'Sfax', 'Sousse', 'Bizerte', 'Nabeul', 'Monastir'];
+    const randomPanels = [
+      { brand: 'Trina Solar', model: 'TSM-NE19R', pmax: '610', vmpp: '40.8', impp: '14.96', voc: '49', isc: '15.86', coeffVoc: '-0.25', coeffIsc: '0.04', irm: '20', area: '2.58', weight: '27.5' },
+      { brand: 'Jinko Solar', model: 'JKM555M-72HL4', pmax: '555', vmpp: '40.9', impp: '13.57', voc: '49.6', isc: '14.31', coeffVoc: '-0.28', coeffIsc: '0.045', irm: '25', area: '2.58', weight: '28' },
+      { brand: 'LONGi Solar', model: 'LR5-72HPH-550M', pmax: '550', vmpp: '41.65', impp: '13.21', voc: '49.8', isc: '13.98', coeffVoc: '-0.26', coeffIsc: '0.05', irm: '25', area: '2.58', weight: '27.5' }
+    ];
+    const randomInverters = [
+      { brand: 'GoodWe', model: 'GW-3000-XS-11', power: '3000', vdcMax: '600', mpptMin: '50', mpptMax: '550', idcMax: '15', iscMax: '18.75', nbMppt: '1', iacMax: '14.3' },
+      { brand: 'Growatt', model: 'MIN 5000TL-X', power: '5000', vdcMax: '550', mpptMin: '80', mpptMax: '500', idcMax: '13.5', iscMax: '16.9', nbMppt: '2', iacMax: '22.7' },
+      { brand: 'Huawei', model: 'SUN2000-3KTL-L1', power: '3000', vdcMax: '600', mpptMin: '90', mpptMax: '560', idcMax: '12.5', iscMax: '18', nbMppt: '2', iacMax: '15' }
+    ];
+
+    const name = randomNames[Math.floor(Math.random() * randomNames.length)];
+    const city = randomCities[Math.floor(Math.random() * randomCities.length)];
+    const panel = randomPanels[Math.floor(Math.random() * randomPanels.length)];
+    const inv = randomInverters[Math.floor(Math.random() * randomInverters.length)];
+    const panelCount = (Math.floor(Math.random() * 6) + 4).toString();
+    const peakKwc = ((parseFloat(panel.pmax) * parseInt(panelCount)) / 1000).toFixed(2);
+
+    setForm({
+      customerName: name,
+      customerCin: '0' + Math.floor(1000000 + Math.random() * 8999999),
+      customerPhone: '+216 ' + Math.floor(20000000 + Math.random() * 79999999),
+      customerAddress: `Rue Habib Bourguiba, ${city}`,
+      stegMeterRef: 'STG-' + Math.floor(100000 + Math.random() * 899999),
+      gpsLatitude: (36.7 + Math.random() * 0.3).toFixed(4),
+      gpsLongitude: (10.1 + Math.random() * 0.3).toFixed(4),
+      gpsAltitude: Math.floor(10 + Math.random() * 60).toString(),
+
+      peakPowerKwc: peakKwc,
+      panelCount,
+      panelBrand: panel.brand,
+      panelModel: panel.model,
+      pmax: panel.pmax,
+      vmpp: panel.vmpp,
+      impp: panel.impp,
+      voc: panel.voc,
+      isc: panel.isc,
+      coeffVoc: panel.coeffVoc,
+      coeffIsc: panel.coeffIsc,
+      irm: panel.irm,
+      panelAreaM2: panel.area,
+      panelWeightKg: panel.weight,
+
+      inverterBrand: inv.brand,
+      inverterModel: inv.model,
+      inverterPower: inv.power,
+      vdcMax: inv.vdcMax,
+      mpptMin: inv.mpptMin,
+      mpptMax: inv.mpptMax,
+      idcMax: inv.idcMax,
+      iscMax: inv.iscMax,
+      nbMppt: inv.nbMppt,
+      iacMax: inv.iacMax,
+
+      dcSwitchUsec: '800',
+      dcSwitchIn: '25',
+      spdDcUcpv: '1000',
+      spdDcUp: '3.8',
+      spdDcIn: '20',
+      spdDcIscpv: '1000',
+      dcProtUw: '1000',
+
+      acBreakerIn: '20',
+      acBreakerSensitivity: '30',
+      spdAcUc: '275',
+      spdAcUp: '1.5',
+      spdAcIn: '20',
+      acProtUw: '400',
+
+      dcCableSection: '6',
+      dcCableIz: '41',
+      dcCableMaterial: 'CU',
+      dcCableInsulation: 'PR',
+
+      acCableSection: '4',
+      acCableIz: '32',
+      acCableMaterial: 'CU',
+      acCableInsulation: 'PR',
+
+      dcCableLength: (Math.floor(Math.random() * 15) + 10).toString(),
+      acCableLength: (Math.floor(Math.random() * 10) + 5).toString(),
+      acPhase: 'mono',
+      tmin: '-10',
+      tmax: '85',
+      dcCableGrouping: '1',
+      dcCableTemp: '50',
+      acCableGrouping: '1',
+      acCableTemp: '40',
+
+      supportHeightM: '0.5',
+      ballastLeverM: '0.6',
+      ballastWeightKg: '0',
+      windSpeedKmh: '130',
+    });
+  };
+
   const handleDeleteEquipment = async (id: string) => {
     try {
       await api.deleteEquipment(id);
@@ -855,6 +954,7 @@ export default function DossierCreatePage({
         {error && <div className="msg-box error mt-16">{error}</div>}
 
         <div className="flex gap-8 mt-16" style={{ justifyContent: 'flex-end' }}>
+          <button type="button" className="btn btn-ghost" onClick={handleFillWithRandomData} title="Remplir automatiquement tous les champs">?? Remplir</button>
           <button type="button" className="btn btn-ghost" onClick={onCancel}>Annuler</button>
           <button type="submit" className="btn btn-primary" disabled={submitting}>
             {submitting ? 'Création...' : 'Créer le dossier'}
