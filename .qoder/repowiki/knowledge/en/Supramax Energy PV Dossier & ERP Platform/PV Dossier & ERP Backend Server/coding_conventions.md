@@ -1,0 +1,6 @@
+- Route handlers are wrapped in try/catch blocks that return `{ message: error.message }` on failure, keeping error responses uniform across the API.
+- Protected routes compose two middlewares — `authMiddleware` (Bearer token verification) followed by `authorizeRoles(...)` (RBAC check) — before invoking handler logic.
+- Mongoose schemas use `mongoose.Schema.Types.ObjectId` references with `ref: 'ModelName'` and populate related fields (e.g. `createdBy`, `assignedTechnician`, `customer`) in queries.
+- Unique identifiers for ERP entities (orderNumber, invoiceNumber, paymentNumber, employeeId, sku) are generated via helper functions (`generateNumber`, SKU prefixing) rather than relying on database sequences.
+- Business rules are extracted into pure utility functions (`computeStegCompliance`, `calculatePVMetrics`, `computeTotals`) and invoked from route handlers instead of being embedded inline.
+- File uploads use a shared `multer.diskStorage` config that writes to `uploads/` with a timestamped unique filename, and deletion routes remove both the DB reference and the physical file from disk.

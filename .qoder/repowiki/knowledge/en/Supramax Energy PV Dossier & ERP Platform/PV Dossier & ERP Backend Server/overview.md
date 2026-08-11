@@ -1,0 +1,1 @@
+Express.js backend that manages PV technical dossiers, AI-powered equipment datasheet scanning, STEG compliance calculations, PDF dossier generation, and a full ERP module (customers, products, orders, invoices, accounting).

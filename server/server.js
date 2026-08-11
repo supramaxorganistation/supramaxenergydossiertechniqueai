@@ -10,6 +10,7 @@ import fs from 'fs';
 import { scanDatasheet } from './services/aiScanner.js';
 import { computeStegCompliance } from './utils/stegCalculations.js';
 import { generateStegPDF } from './services/pdfGenerator.js';
+import { erpRouter } from './erpRoutes.js';
 
 dotenv.config();
 
@@ -775,6 +776,12 @@ app.post('/items', authMiddleware, async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
+// ============================================
+// ERP MODULE ROUTES
+// ============================================
+
+app.use('/erp', authMiddleware, erpRouter);
 
 // ============================================
 // DATABASE CONNECTION & SERVER START

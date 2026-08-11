@@ -1,10 +1,23 @@
 import type { User } from '../types';
 
-export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'admin';
+export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'admin' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
 
 const NAV = [
   { key: 'dashboard', icon: '📊', label: 'Tableau de bord' },
   { key: 'dossiers', icon: '📁', label: 'Dossiers' },
+] as const;
+
+const NAV_ERP = [
+  { key: 'erp-dashboard', icon: '🏢', label: 'ERP Overview' },
+  { key: 'erp-customers', icon: '👥', label: 'CRM' },
+  { key: 'erp-products', icon: '📦', label: 'Products' },
+  { key: 'erp-quotes', icon: '📝', label: 'Quotes' },
+  { key: 'erp-sales', icon: '🛒', label: 'Sales' },
+  { key: 'erp-purchases', icon: '📋', label: 'Purchases' },
+  { key: 'erp-stock', icon: '🏗️', label: 'Stock' },
+  { key: 'erp-accounting', icon: '📒', label: 'Accounting' },
+  { key: 'erp-hr', icon: '👤', label: 'HR' },
+  { key: 'erp-settings', icon: '⚙️', label: 'Settings' },
 ] as const;
 
 const NAV_TECH = { key: 'dossier-create', icon: '➕', label: 'Nouveau dossier' } as const;
@@ -51,6 +64,17 @@ export default function AppLayout({
         <nav className="sidebar-nav">
           <div className="nav-section">Navigation</div>
           {items.map((item) => (
+            <button
+              key={item.key}
+              className={`nav-item ${active === item.key ? 'active' : ''}`}
+              onClick={() => onNavigate(item.key)}
+            >
+              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-label">{item.label}</span>
+            </button>
+          ))}
+          <div className="nav-section">ERP Modules</div>
+          {NAV_ERP.map((item) => (
             <button
               key={item.key}
               className={`nav-item ${active === item.key ? 'active' : ''}`}

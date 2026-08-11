@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import './App.css';
 import { api, setToken } from './api';
+import { getToken } from './api';
+import { initErpApi } from './erpApi';
 import type { ComplianceReport, Dossier, User } from './types';
 import AppLayout, { type Screen } from './layout/AppLayout';
 import LoginPage from './pages/LoginPage';
@@ -9,6 +11,16 @@ import DossiersPage from './pages/DossiersPage';
 import DossierDetailPage from './pages/DossierDetailPage';
 import DossierCreatePage from './pages/DossierCreatePage';
 import AdminPage from './pages/AdminPage';
+import ErpDashboardPage from './pages/ErpDashboardPage';
+import CustomersPage from './pages/CustomersPage';
+import ProductsPage from './pages/ProductsPage';
+import SalesPage from './pages/SalesPage';
+import PurchasesPage from './pages/PurchasesPage';
+import StockPage from './pages/StockPage';
+import AccountingPage from './pages/AccountingPage';
+import EmployeesPage from './pages/EmployeesPage';
+import QuotesPage from './pages/QuotesPage';
+import SettingsPage from './pages/SettingsPage';
 import { LoadingScreen } from './components/ui';
 
 function App() {
@@ -20,6 +32,9 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [compliance, setCompliance] = useState<ComplianceReport | null>(null);
   const [isLoadingCompliance, setIsLoadingCompliance] = useState(false);
+
+  // Initialize ERP API with token getter
+  useEffect(() => { initErpApi(getToken); }, []);
 
   const selectedDossier = dossiers.find((d) => d._id === selectedId) || null;
 
@@ -133,6 +148,16 @@ function App() {
     },
     'dossier-create': { title: 'Nouveau dossier', subtitle: 'Créez un dossier technique STEG' },
     admin: { title: 'Administration', subtitle: 'Gestion des utilisateurs et des rôles' },
+    'erp-dashboard': { title: 'ERP Overview', subtitle: 'Enterprise Resource Planning' },
+    'erp-customers': { title: 'CRM', subtitle: 'Customers & Suppliers management' },
+    'erp-products': { title: 'Products', subtitle: 'Product catalog & inventory' },
+    'erp-quotes': { title: 'Quotes', subtitle: 'Quotations & estimations' },
+    'erp-sales': { title: 'Sales', subtitle: 'Sales orders & invoices' },
+    'erp-purchases': { title: 'Purchases', subtitle: 'Purchase orders & suppliers' },
+    'erp-stock': { title: 'Stock', subtitle: 'Warehouses & stock movements' },
+    'erp-accounting': { title: 'Accounting', subtitle: 'Chart of accounts & journal entries' },
+    'erp-hr': { title: 'HR', subtitle: 'Employees & attendance' },
+    'erp-settings': { title: 'Settings', subtitle: 'ERP configuration & preferences' },
   };
 
   return (
@@ -185,6 +210,17 @@ function App() {
       )}
 
       {screen === 'admin' && currentUser.role === 'admin' && <AdminPage currentUser={currentUser} />}
+
+      {screen === 'erp-dashboard' && <ErpDashboardPage onNavigate={setScreen} />}
+      {screen === 'erp-customers' && <CustomersPage />}
+      {screen === 'erp-products' && <ProductsPage />}
+      {screen === 'erp-quotes' && <QuotesPage />}
+      {screen === 'erp-sales' && <SalesPage />}
+      {screen === 'erp-purchases' && <PurchasesPage />}
+      {screen === 'erp-stock' && <StockPage />}
+      {screen === 'erp-accounting' && <AccountingPage />}
+      {screen === 'erp-hr' && <EmployeesPage />}
+      {screen === 'erp-settings' && <SettingsPage />}
     </AppLayout>
   );
 }

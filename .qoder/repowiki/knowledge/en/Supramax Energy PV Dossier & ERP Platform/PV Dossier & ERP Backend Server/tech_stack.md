@@ -1,0 +1,1 @@
+Express 4 + Mongoose 8 (MongoDB), bcryptjs for password hashing, jsonwebtoken for bearer-token auth, multer for multipart file uploads, @google/generative-ai (Gemini 2.5 Flash) for PDF datasheet OCR/spec extraction, pdf-lib (+ fontkit) for programmatic PDF filling and merging, dotenv for configuration.

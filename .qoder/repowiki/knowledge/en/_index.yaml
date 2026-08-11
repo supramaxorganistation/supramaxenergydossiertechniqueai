@@ -1,0 +1,29 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: madaradou
+nodes_managed: true
+exported_at: "2026-08-11T15:06:38Z"
+modules:
+    "":
+        dir_name: Supramax Energy PV Dossier & ERP Platform
+        title: Supramax Energy PV Dossier & ERP Platform
+        scope:
+            - README.md
+            - .gitignore
+            - package.json
+            - package-lock.json
+        source_files: []
+        children:
+            - server
+        depends_on: []
+        related_to: []
+    server:
+        dir_name: PV Dossier & ERP Backend Server
+        title: PV Dossier & ERP Backend Server
+        scope:
+            - server/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

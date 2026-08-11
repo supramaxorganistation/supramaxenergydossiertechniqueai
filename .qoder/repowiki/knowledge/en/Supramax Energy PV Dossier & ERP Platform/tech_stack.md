@@ -1,0 +1,1 @@
+Node.js with the official MongoDB driver (`mongodb ^7.5.0`) as the sole top-level dependency consumed by the server.

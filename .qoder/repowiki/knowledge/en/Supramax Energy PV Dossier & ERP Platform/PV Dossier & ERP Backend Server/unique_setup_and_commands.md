@@ -1,0 +1,1 @@
+Run with `npm run dev` or `node server.js`; requires a `.env` file defining `MONGO_URI`, `JWT_SECRET`, `PORT`, and `GEMINI_API_KEY`. The server auto-creates the `uploads/` directory on startup and serves it statically so uploaded documents are reachable at `/uploads/<filename>`.

@@ -1,0 +1,1 @@
+Run the server from the repository root using Node with the `.env` file loaded; logs stream to `dev.out.log` and `dev.err.log` in the workspace root.

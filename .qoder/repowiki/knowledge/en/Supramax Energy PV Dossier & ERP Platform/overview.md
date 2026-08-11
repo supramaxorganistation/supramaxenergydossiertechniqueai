@@ -1,0 +1,1 @@
+Monorepo root that hosts the Express-based PV technical dossier and ERP backend server alongside shared uploads, environment configuration, and application logs.

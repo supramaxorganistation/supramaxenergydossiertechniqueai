@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: ""
+title: Supramax Energy PV Dossier & ERP Platform
+scope:
+    - README.md
+    - .gitignore
+    - package.json
+    - package-lock.json
+source_files: []
+depends_on: []
+related_to: []
