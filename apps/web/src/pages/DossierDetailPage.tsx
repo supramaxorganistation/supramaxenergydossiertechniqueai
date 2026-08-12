@@ -36,6 +36,7 @@ export default function DossierDetailPage({
   const [isUploading, setIsUploading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingDocx, setIsGeneratingDocx] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
   const [notice, setNotice] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +99,26 @@ export default function DossierDetailPage({
       setNotice(`Erreur lors de la génération : ${err.message}`);
     } finally {
       setIsGeneratingPdf(false);
+    }
+  }, [dossier._id]);
+
+  const handleGenerateDocx = useCallback(async () => {
+    setIsGeneratingDocx(true);
+    setNotice('');
+    try {
+      const { blob, filename } = await api.exportDocx(dossier._id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      setNotice(`Erreur lors de la génération DOCX : ${err.message}`);
+    } finally {
+      setIsGeneratingDocx(false);
     }
   }, [dossier._id]);
 
@@ -360,6 +381,14 @@ export default function DossierDetailPage({
             disabled={isGeneratingPdf}
           >
             {isGeneratingPdf ? '⏳ Génération du PDF en cours...' : '📥 Télécharger le dossier technique PDF'}
+          </button>
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', padding: 14, fontSize: 14, marginTop: 10 }}
+            onClick={handleGenerateDocx}
+            disabled={isGeneratingDocx}
+          >
+            {isGeneratingDocx ? '⏳ Génération du DOCX en cours...' : '📥 Télécharger le dossier technique DOCX'}
           </button>
         </div>
       )}
