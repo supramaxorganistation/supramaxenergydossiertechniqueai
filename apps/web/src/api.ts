@@ -73,7 +73,9 @@ async function requestBlob(path: string): Promise<{ blob: Blob; filename: string
   const blob = await response.blob();
   const disposition = response.headers.get('content-disposition') || '';
   const match = disposition.match(/filename="?([^";]+)"?/);
-  const filename = match ? match[1] : 'dossier.pdf';
+  // Infer default filename from URL path when header is missing (e.g. CORS)
+  const ext = path.includes('export-docx') ? 'docx' : 'pdf';
+  const filename = match ? match[1] : `dossier.${ext}`;
   return { blob, filename };
 }
 
@@ -149,6 +151,7 @@ export const api = {
     request<{ message: string }>(`/api/dossiers/${id}`, { method: 'DELETE' }),
   compliance: (id: string) => request<ComplianceReport>(`/api/dossiers/${id}/compliance`),
   exportPdf: (id: string) => requestBlob(`/api/dossiers/${id}/export-pdf`),
+  exportDocx: (id: string) => requestBlob(`/api/dossiers/${id}/export-docx`),
 
   uploadFile: (id: string, file: File) => {
     const form = new FormData();

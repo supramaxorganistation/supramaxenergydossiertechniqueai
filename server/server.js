@@ -14,6 +14,7 @@ import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { scanDatasheet } from './services/aiScanner.js';
 import { computeStegCompliance } from './utils/stegCalculations.js';
 import { generateStegPDF } from './services/pdfGenerator.js';
+import { generateStegDOCX } from './services/docxTemplateFiller.js';
 import { erpRouter } from './erpRoutes.js';
 
 dotenv.config();
@@ -52,7 +53,9 @@ const origin = 'http://localhost:5173';
 // In-memory store for WebAuthn challenges (use DB in production)
 const webauthnChallenges = new Map();
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['Content-Disposition'],
+}));
 app.use(express.json());
 app.use(express.static('uploads'));
 
@@ -84,7 +87,7 @@ const userSchema = new mongoose.Schema({
 });
 
 const dossierSchema = new mongoose.Schema({
-    customerDetails: {
+  customerDetails: {
     name: { type: String, required: true },
     cin: { type: String, required: true },
     phone: { type: String, required: true },
@@ -1058,7 +1061,7 @@ app.get('/api/dossiers/:id/export-pdf', authMiddleware, async (req, res) => {
 
     // Compute STEG compliance
     const complianceReport = computeStegCompliance(dossier);
-    
+
     // Save compliance report to dossier
     dossier.complianceReport = complianceReport;
     await dossier.save();
@@ -1075,6 +1078,46 @@ app.get('/api/dossiers/:id/export-pdf', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error('PDF generation error:', error);
     res.status(500).json({ message: 'Failed to generate PDF', error: error.message });
+  }
+});
+
+// ── DOCX EXPORT ───────────────────────────────────────────────────────
+app.get('/api/dossiers/:id/export-docx', authMiddleware, async (req, res) => {
+  try {
+    const dossier = await Dossier.findById(req.params.id)
+      .populate('createdBy', 'name email')
+      .populate('assignedTechnician', 'name email');
+
+    if (!dossier) {
+      return res.status(404).json({ message: 'Dossier not found' });
+    }
+
+    // Only admin, technician, or dossier owner can export
+    if (req.user.role === 'client' && dossier.createdBy._id.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Compute STEG compliance
+    const complianceReport = computeStegCompliance(dossier);
+
+    // Save compliance report to dossier
+    dossier.complianceReport = complianceReport;
+    await dossier.save();
+
+    // Generate DOCX
+    const docxBuffer = await generateStegDOCX(dossier, complianceReport);
+
+    // Determine filename
+    const ref = dossier.customerDetails?.stegMeterRef || dossier._id;
+    const filename = `Dossier_Technique_${ref}.docx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', docxBuffer.length);
+    res.send(docxBuffer);
+  } catch (error) {
+    console.error('DOCX generation error:', error);
+    res.status(500).json({ message: 'Failed to generate DOCX', error: error.message });
   }
 });
 
