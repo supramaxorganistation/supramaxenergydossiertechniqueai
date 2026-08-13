@@ -1,3 +1,9 @@
+import dns from 'dns';
+
+// Force Node.js to use reliable external DNS servers instead of 127.0.0.1.
+// This fixes MongoDB Atlas SRV resolution failures on Windows (querySrv ECONNREFUSED).
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
