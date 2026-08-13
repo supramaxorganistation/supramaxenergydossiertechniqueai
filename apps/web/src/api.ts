@@ -79,10 +79,10 @@ async function requestBlob(path: string): Promise<{ blob: Blob; filename: string
 
 export const api = {
   // Auth
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, recaptchaToken?: string) =>
     request<{ token: string; user: User }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, recaptchaToken }),
     }),
   register: (name: string, email: string, password: string, role?: string) =>
     request<{ token: string; user: User }>('/auth/register', {
@@ -90,6 +90,53 @@ export const api = {
       body: JSON.stringify({ name, email, password, role }),
     }),
   me: () => request<{ user: User }>('/me'),
+
+  // reCAPTCHA
+  getRecaptchaKey: () => request<{ siteKey: string }>('/auth/recaptcha-key'),
+
+  // Google OAuth
+  getGoogleConfig: () => request<{ clientId: string }>('/auth/google-config'),
+  loginWithGoogle: (credential: string) =>
+    request<{ token: string; user: User }>('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ credential }),
+    }),
+
+  // Forgot password
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    }),
+
+  // WebAuthn / Face ID
+  webauthnRegisterOptions: () =>
+    request<any>('/auth/webauthn/register-options', { method: 'POST' }),
+  webauthnRegisterVerify: (response: any) =>
+    request<{ message: string }>('/auth/webauthn/register-verify', {
+      method: 'POST',
+      body: JSON.stringify(response),
+    }),
+  webauthnAuthOptions: (email: string) =>
+    request<any>('/auth/webauthn/auth-options', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  webauthnAuthVerify: (userId: string, credential: any) =>
+    request<{ token: string; user: User }>('/auth/webauthn/auth-verify', {
+      method: 'POST',
+      body: JSON.stringify({ userId, credential }),
+    }),
+  webauthnHasCredentials: (email: string) =>
+    request<{ hasCredentials: boolean }>('/auth/webauthn/has-credentials', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
 
   // Dossiers
   listDossiers: () => request<Dossier[]>('/api/dossiers'),

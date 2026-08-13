@@ -5,7 +5,7 @@ import { getToken } from './api';
 import { initErpApi } from './erpApi';
 import type { ComplianceReport, Dossier, User } from './types';
 import AppLayout, { type Screen } from './layout/AppLayout';
-import LoginPage from './pages/LoginPage';
+import LoginPage, { ResetPasswordPage } from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DossiersPage from './pages/DossiersPage';
 import DossierDetailPage from './pages/DossierDetailPage';
@@ -30,6 +30,7 @@ function App() {
   const [dossiers, setDossiers] = useState<Dossier[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [editDossierId, setEditDossierId] = useState<string | null>(null);
   const [compliance, setCompliance] = useState<ComplianceReport | null>(null);
   const [isLoadingCompliance, setIsLoadingCompliance] = useState(false);
 
@@ -37,6 +38,7 @@ function App() {
   useEffect(() => { initErpApi(getToken); }, []);
 
   const selectedDossier = dossiers.find((d) => d._id === selectedId) || null;
+  const editDossier = dossiers.find((d) => d._id === editDossierId) || null;
 
   const loadDossiers = useCallback(async () => {
     try {
@@ -110,6 +112,11 @@ function App() {
     setScreen('dossier-detail');
   };
 
+  const editDossierAction = (dossier: Dossier) => {
+    setEditDossierId(dossier._id);
+    setScreen('dossier-edit');
+  };
+
   const refreshSelected = useCallback(async () => {
     if (!selectedId) return;
     await loadDossiers();
@@ -134,6 +141,12 @@ function App() {
   }
 
   if (!currentUser) {
+    // Check for reset-password hash route
+    const hash = window.location.hash;
+    if (hash.startsWith('#/reset-password/')) {
+      const token = hash.replace('#/reset-password/', '');
+      return <ResetPasswordPage token={token} onDone={() => { window.location.hash = ''; }} />;
+    }
     return <LoginPage onLogin={handleLogin} />;
   }
 
@@ -147,6 +160,7 @@ function App() {
       title: selectedDossier ? `Dossier — ${selectedDossier.customerDetails.name}` : 'Dossier',
     },
     'dossier-create': { title: 'Nouveau dossier', subtitle: 'Créez un dossier technique STEG' },
+    'dossier-edit': { title: editDossier ? `Modifier — ${editDossier.customerDetails.name}` : 'Modifier dossier', subtitle: 'Modifiez les informations du dossier' },
     admin: { title: 'Administration', subtitle: 'Gestion des utilisateurs et des rôles' },
     'erp-dashboard': { title: 'ERP Overview', subtitle: 'Enterprise Resource Planning' },
     'erp-customers': { title: 'CRM', subtitle: 'Customers & Suppliers management' },
@@ -184,6 +198,7 @@ function App() {
           currentUser={currentUser}
           onOpenDossier={openDossier}
           onNewDossier={() => setScreen('dossier-create')}
+          onEditDossier={editDossierAction}
           onDeleteDossier={handleDelete}
         />
       )}
@@ -201,6 +216,17 @@ function App() {
 
       {screen === 'dossier-create' && (
         <DossierCreatePage
+          onCreated={() => {
+            loadDossiers();
+            setScreen('dossiers');
+          }}
+          onCancel={() => setScreen('dossiers')}
+        />
+      )}
+
+      {screen === 'dossier-edit' && editDossier && (
+        <DossierCreatePage
+          editDossier={editDossier}
           onCreated={() => {
             loadDossiers();
             setScreen('dossiers');

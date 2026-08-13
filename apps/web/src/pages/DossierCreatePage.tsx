@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import type { Dossier, Equipment, CatalogEquipment } from '../types';
+import { useFormValidation, required, positive, phone as phoneRule } from '../useFormValidation';
 
 type FormState = {
   customerName: string;
@@ -302,16 +303,113 @@ function buildEquipment(form: FormState): Equipment {
   return equipment;
 }
 
+function dossierToFormState(d: Dossier): FormState {
+  const cd = d.customerDetails;
+  const pv = d.pvSystemParams;
+  const eq = d.equipment || {};
+  const ps = eq.panel?.specs || {};
+  const inv = eq.inverter?.specs || {};
+  const dcP = eq.dcProtection?.specs || {};
+  const acP = eq.acProtection?.specs || {};
+  const dcC = eq.dcCable?.specs || {};
+  const acC = eq.acCable?.specs || {};
+  const s = (v: any) => (v != null ? String(v) : '');
+  return {
+    customerName: cd.name || '',
+    customerCin: cd.cin || '',
+    customerPhone: cd.phone || '',
+    customerAddress: cd.address || '',
+    stegMeterRef: cd.stegMeterRef || '',
+    gpsLatitude: s(cd.gpsLatitude),
+    gpsLongitude: s(cd.gpsLongitude),
+    gpsAltitude: s(cd.gpsAltitude),
+    peakPowerKwc: s(pv.peakPowerKwc) || '3',
+    panelCount: s(pv.panelCount) || '8',
+    panelBrand: pv.panelBrand || '',
+    panelModel: (eq.panel?.model as string) || '',
+    pmax: s(ps.pmax),
+    vmpp: s(ps.vmpp),
+    impp: s(ps.impp),
+    voc: s(ps.voc),
+    isc: s(ps.isc),
+    coeffVoc: s(ps.coeffVoc),
+    coeffIsc: s(ps.coeffIsc),
+    irm: s(ps.irm),
+    panelAreaM2: s(pv.panelAreaM2 ?? ps.panelAreaM2) || '2.58',
+    panelWeightKg: s(pv.panelWeightKg ?? ps.panelWeightKg) || '27.5',
+    inverterBrand: (eq.inverter?.brand as string) || '',
+    inverterModel: pv.inverterModel || '',
+    inverterPower: s(inv.pac != null ? (Number(inv.pac) / 1000) : ''),
+    vdcMax: s(inv.vdcMax),
+    mpptMin: s(inv.mpptMin),
+    mpptMax: s(inv.mpptMax),
+    idcMax: s(inv.idcMax),
+    iscMax: s(inv.iscMax),
+    nbMppt: s(inv.nbMppt),
+    iacMax: s(inv.iacMax),
+    dcSwitchUsec: s(dcP.usec),
+    dcSwitchIn: s(dcP.inDisj),
+    spdDcUcpv: s(dcP.ucpv),
+    spdDcUp: s(dcP.up),
+    spdDcIn: s(dcP.in),
+    spdDcIscpv: s(dcP.iscpv),
+    dcProtUw: s(dcP.uw),
+    acBreakerIn: s(acP.inDisj),
+    acBreakerSensitivity: s(acP.sensitivityA),
+    spdAcUc: s(acP.uc),
+    spdAcUp: s(acP.up),
+    spdAcIn: s(acP.in),
+    acProtUw: s(acP.uw),
+    dcCableSection: s(dcC.section),
+    dcCableIz: s(dcC.iz),
+    dcCableMaterial: (dcC.material as string) || '',
+    dcCableInsulation: (dcC.insulation as string) || '',
+    acCableSection: s(acC.section),
+    acCableIz: s(acC.iz),
+    acCableMaterial: (acC.material as string) || '',
+    acCableInsulation: (acC.insulation as string) || '',
+    dcCableLength: s(pv.dcCableLength) || '20',
+    acCableLength: s(pv.acCableLength) || '10',
+    acPhase: (pv.acPhase as 'mono' | 'tri') || 'mono',
+    tmin: s(pv.tmin) || '-10',
+    tmax: s(pv.tmax) || '85',
+    dcCableGrouping: s(pv.dcCableGrouping) || '1',
+    dcCableTemp: s(pv.dcCableTemp) || '50',
+    acCableGrouping: s(pv.acCableGrouping) || '1',
+    acCableTemp: s(pv.acCableTemp) || '40',
+    supportHeightM: s(pv.supportHeightM) || '0.5',
+    ballastLeverM: s(pv.ballastLeverM) || '0.6',
+    ballastWeightKg: s(pv.ballastWeightKg) || '0',
+    windSpeedKmh: s(pv.windSpeedKmh) || '130',
+  };
+}
+
 export default function DossierCreatePage({
   onCreated,
   onCancel,
+  editDossier,
 }: {
   onCreated: (d: Dossier) => void;
   onCancel: () => void;
+  editDossier?: Dossier;
 }) {
-  const [form, setForm] = useState<FormState>(INITIAL);
+  const isEdit = !!editDossier;
+  const [form, setForm] = useState<FormState>(() => editDossier ? dossierToFormState(editDossier) : INITIAL);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // --- Inline validation rules ---
+  const rules = useMemo(() => ({
+    customerName: [required('Nom complet')],
+    customerCin: [required('CIN')],
+    customerPhone: [required('Téléphone'), phoneRule('Téléphone')],
+    customerAddress: [required('Adresse')],
+    stegMeterRef: [required('Réf. compteur STEG')],
+    peakPowerKwc: [required('Puissance crête'), positive('Puissance crête')],
+    panelCount: [required('Nombre de panneaux'), positive('Nombre de panneaux')],
+    inverterModel: [required('Modèle onduleur')],
+  }), []);
+  const { errors, validate, clearErrors } = useFormValidation<FormState>(rules);
 
   const [catalog, setCatalog] = useState<CatalogEquipment[]>([]);
   const [scans, setScans] = useState<Record<string, { file: File | null; busy: boolean }>>({});
@@ -558,9 +656,10 @@ export default function DossierCreatePage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!validate(form)) return;
     setSubmitting(true);
     try {
-      const dossier = await api.createDossier({
+      const payload = {
         customerDetails: {
           name: form.customerName,
           cin: form.customerCin,
@@ -593,39 +692,47 @@ export default function DossierCreatePage({
           windSpeedKmh: parseFloat(form.windSpeedKmh) || undefined,
         },
         equipment: buildEquipment(form),
-      });
+      };
+      const dossier = isEdit
+        ? await api.updateDossier(editDossier!._id, payload)
+        : await api.createDossier(payload);
       onCreated(dossier);
     } catch (err: any) {
-      setError(err.message || 'Erreur lors de la création');
+      setError(err.message || (isEdit ? 'Erreur lors de la modification' : 'Erreur lors de la création'));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form noValidate onSubmit={handleSubmit}>
       <div className="card">
-        <h3 className="card-title">👤 Informations client</h3>
+        <h3 className="card-title">{isEdit ? '✏️ Modification du dossier' : '👤 Informations client'}</h3>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Nom complet *</label>
-            <input className="input" value={form.customerName} onChange={(e) => set('customerName', e.target.value)} placeholder="Ex. Aziza Ajmi" required />
+            <input className={`input ${errors.customerName ? 'input-invalid' : ''}`} value={form.customerName} onChange={(e) => { set('customerName', e.target.value); clearErrors(); }} placeholder="Ex. Aziza Ajmi" />
+            {errors.customerName && <span className="field-error">{errors.customerName}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">CIN *</label>
-            <input className="input" value={form.customerCin} onChange={(e) => set('customerCin', e.target.value)} placeholder="CIN du client" required />
+            <input className={`input ${errors.customerCin ? 'input-invalid' : ''}`} value={form.customerCin} onChange={(e) => { set('customerCin', e.target.value); clearErrors(); }} placeholder="CIN du client" />
+            {errors.customerCin && <span className="field-error">{errors.customerCin}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Téléphone *</label>
-            <input className="input" value={form.customerPhone} onChange={(e) => set('customerPhone', e.target.value)} placeholder="+216 ..." required />
+            <input className={`input ${errors.customerPhone ? 'input-invalid' : ''}`} value={form.customerPhone} onChange={(e) => { set('customerPhone', e.target.value); clearErrors(); }} placeholder="+216 ..." />
+            {errors.customerPhone && <span className="field-error">{errors.customerPhone}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Réf. compteur STEG *</label>
-            <input className="input" value={form.stegMeterRef} onChange={(e) => set('stegMeterRef', e.target.value)} placeholder="N° compteur" required />
+            <input className={`input ${errors.stegMeterRef ? 'input-invalid' : ''}`} value={form.stegMeterRef} onChange={(e) => { set('stegMeterRef', e.target.value); clearErrors(); }} placeholder="N° compteur" />
+            {errors.stegMeterRef && <span className="field-error">{errors.stegMeterRef}</span>}
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Adresse *</label>
-            <input className="input" value={form.customerAddress} onChange={(e) => set('customerAddress', e.target.value)} placeholder="Adresse de l'installation" required />
+            <input className={`input ${errors.customerAddress ? 'input-invalid' : ''}`} value={form.customerAddress} onChange={(e) => { set('customerAddress', e.target.value); clearErrors(); }} placeholder="Adresse de l'installation" />
+            {errors.customerAddress && <span className="field-error">{errors.customerAddress}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">GPS Latitude</label>
@@ -665,11 +772,13 @@ export default function DossierCreatePage({
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Puissance crête (kWc) *</label>
-            <input className="input" type="number" step="0.1" value={form.peakPowerKwc} onChange={(e) => set('peakPowerKwc', e.target.value)} required />
+            <input className={`input ${errors.peakPowerKwc ? 'input-invalid' : ''}`} type="number" step="0.1" value={form.peakPowerKwc} onChange={(e) => { set('peakPowerKwc', e.target.value); clearErrors(); }} />
+            {errors.peakPowerKwc && <span className="field-error">{errors.peakPowerKwc}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Nombre de panneaux *</label>
-            <input className="input" type="number" value={form.panelCount} onChange={(e) => set('panelCount', e.target.value)} required />
+            <input className={`input ${errors.panelCount ? 'input-invalid' : ''}`} type="number" value={form.panelCount} onChange={(e) => { set('panelCount', e.target.value); clearErrors(); }} />
+            {errors.panelCount && <span className="field-error">{errors.panelCount}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Marque panneau</label>
@@ -735,7 +844,8 @@ export default function DossierCreatePage({
           </div>
           <div className="form-group">
             <label className="form-label">Modèle onduleur *</label>
-            <input className="input" value={form.inverterModel} onChange={(e) => set('inverterModel', e.target.value)} required />
+            <input className={`input ${errors.inverterModel ? 'input-invalid' : ''}`} value={form.inverterModel} onChange={(e) => { set('inverterModel', e.target.value); clearErrors(); }} />
+            {errors.inverterModel && <span className="field-error">{errors.inverterModel}</span>}
           </div>
           <div className="form-group">
             <label className="form-label">Puissance AC (kW)</label>
@@ -955,9 +1065,9 @@ export default function DossierCreatePage({
 
         <div className="flex gap-8 mt-16" style={{ justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-ghost" onClick={handleFillWithRandomData} title="Remplir automatiquement tous les champs">?? Remplir</button>
-          <button type="button" className="btn btn-ghost" onClick={onCancel}>Annuler</button>
+          <button type="button" className="btn btn-ghost" onClick={onCancel}>{isEdit ? 'Annuler' : 'Annuler'}</button>
           <button type="submit" className="btn btn-primary" disabled={submitting}>
-            {submitting ? 'Création...' : 'Créer le dossier'}
+            {submitting ? (isEdit ? 'Enregistrement...' : 'Création...') : (isEdit ? 'Sauvegarder les modifications' : 'Créer le dossier')}
           </button>
         </div>
       </div>

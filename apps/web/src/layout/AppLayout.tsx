@@ -1,6 +1,6 @@
 import type { User } from '../types';
 
-export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'admin' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
+export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'dossier-edit' | 'admin' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
 
 const NAV = [
   { key: 'dashboard', icon: '📊', label: 'Tableau de bord' },

@@ -7,6 +7,10 @@ import jwt from 'jsonwebtoken';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
+import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import { scanDatasheet } from './services/aiScanner.js';
 import { computeStegCompliance } from './utils/stegCalculations.js';
 import { generateStegPDF } from './services/pdfGenerator.js';
@@ -17,6 +21,36 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 const jwtSecret = process.env.JWT_SECRET || 'dev-secret-change-me';
+
+// --- reCAPTCHA ---
+const RECAPTCHA_SECRET = process.env.RECAPTCHA_SECRET_KEY || '';
+
+// --- Google OAuth ---
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
+
+// --- Admin email for forgot-password notifications ---
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@supramax.com';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+
+// --- SMTP transporter for emails ---
+let mailTransporter = null;
+if (process.env.SMTP_HOST) {
+  mailTransporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || '587'),
+    secure: false,
+    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  });
+}
+
+// --- WebAuthn config ---
+const rpName = 'Supramax Energy';
+const rpID = 'localhost';
+const origin = 'http://localhost:5173';
+
+// In-memory store for WebAuthn challenges (use DB in production)
+const webauthnChallenges = new Map();
 
 app.use(cors());
 app.use(express.json());
@@ -34,8 +68,18 @@ if (!fs.existsSync('uploads')) {
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: false },
   role: { type: String, enum: ['admin', 'technician', 'client'], default: 'technician' },
+  googleId: { type: String, unique: true, sparse: true },
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  webauthnCredentials: [{
+    id: String,
+    publicKey: Buffer,
+    counter: Number,
+    transports: [String],
+    createdAt: { type: Date, default: Date.now }
+  }],
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -260,10 +304,27 @@ app.post('/auth/register', async (req, res) => {
 
 app.post('/auth/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, recaptchaToken } = req.body;
+
+    // Verify reCAPTCHA
+    if (RECAPTCHA_SECRET && recaptchaToken) {
+      const recaptchaRes = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `secret=${RECAPTCHA_SECRET}&response=${recaptchaToken}`,
+      });
+      const recaptchaData = await recaptchaRes.json();
+      if (!recaptchaData.success) {
+        return res.status(400).json({ message: 'reCAPTCHA verification failed. Please try again.' });
+      }
+    }
+
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+    if (!user.passwordHash) {
+      return res.status(401).json({ message: 'This account uses social login. Please sign in with Google or Face ID.' });
     }
 
     const isValid = await bcrypt.compare(password, user.passwordHash);
@@ -289,6 +350,272 @@ app.get('/me', authMiddleware, async (req, res) => {
     res.json({
       user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ============================================
+// AUTH EXTENSIONS
+// ============================================
+
+// --- reCAPTCHA site key (public, safe to expose) ---
+app.get('/auth/recaptcha-key', (req, res) => {
+  res.json({ siteKey: process.env.RECAPTCHA_SITE_KEY || '' });
+});
+
+// --- Google OAuth Client ID (public) ---
+app.get('/auth/google-config', (req, res) => {
+  res.json({ clientId: GOOGLE_CLIENT_ID });
+});
+
+// --- Forgot Password: notify admin ---
+app.post('/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      // Don't reveal if user exists
+      return res.json({ message: 'If this email exists, the admin has been notified.' });
+    }
+
+    // Generate a reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.passwordResetExpires = new Date(Date.now() + 3600000); // 1 hour
+    await user.save();
+
+    // Send email to admin
+    if (mailTransporter) {
+      await mailTransporter.sendMail({
+        from: process.env.SMTP_USER || ADMIN_EMAIL,
+        to: ADMIN_EMAIL,
+        subject: `[Supramax] Password reset request — ${user.email}`,
+        html: `<h3>Password Reset Request</h3>
+          <p><strong>User:</strong> ${user.name} (${user.email})</p>
+          <p>Click below to reset their password (valid 1 hour):</p>
+          <a href="${FRONTEND_URL}/#/reset-password/${resetToken}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;">Reset Password</a>
+          <p style="margin-top:16px;color:#666;">If you did not expect this request, you can safely ignore it.</p>`,
+      });
+    }
+
+    res.json({ message: 'If this email exists, the admin has been notified.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- Reset Password (admin link) ---
+app.post('/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ message: 'Token and new password are required' });
+    if (newPassword.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
+
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired reset token' });
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password has been reset successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- Google OAuth Login ---
+app.post('/auth/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ message: 'Google credential is required' });
+
+    // Verify Google ID token
+    const tokenRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!tokenRes.ok) return res.status(401).json({ message: 'Invalid Google credential' });
+    const payload = await tokenRes.json();
+
+    // Verify audience matches our client ID
+    if (GOOGLE_CLIENT_ID && payload.aud !== GOOGLE_CLIENT_ID) {
+      return res.status(401).json({ message: 'Google credential audience mismatch' });
+    }
+
+    const { sub: googleId, email, name, picture } = payload;
+
+    let user = await User.findOne({ email: email.toLowerCase() });
+    if (user) {
+      // Link Google account if not already linked
+      if (!user.googleId) {
+        user.googleId = googleId;
+        await user.save();
+      }
+    } else {
+      // Auto-create user from Google
+      user = await User.create({
+        name: name || email,
+        email: email.toLowerCase(),
+        googleId,
+        role: 'client',
+      });
+    }
+
+    res.json({
+      token: signToken(user),
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- WebAuthn: Registration Options ---
+app.post('/auth/webauthn/register-options', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const existingCreds = (user.webauthnCredentials || []).map((c) => ({
+      id: isoBase64URL.toBuffer(c.id),
+      transports: c.transports,
+    }));
+
+    const options = await generateRegistrationOptions({
+      rpName,
+      rpID,
+      userID: isoBase64URL.toBuffer(user._id.toString()),
+      userName: user.email,
+      userDisplayName: user.name,
+      attestationType: 'none',
+      excludeCredentials: existingCreds,
+      authenticatorSelection: { userVerification: 'preferred' },
+    });
+
+    webauthnChallenges.set(user._id.toString(), options.challenge);
+    res.json(options);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- WebAuthn: Registration Verification ---
+app.post('/auth/webauthn/register-verify', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const expectedChallenge = webauthnChallenges.get(user._id.toString());
+    if (!expectedChallenge) return res.status(400).json({ message: 'No challenge found. Start registration first.' });
+
+    const verification = await verifyRegistrationResponse({
+      response: req.body,
+      expectedChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+    });
+
+    if (!verification.verified) return res.status(400).json({ message: 'Verification failed' });
+
+    const { credential } = verification.registrationInfo;
+    user.webauthnCredentials.push({
+      id: credential.id,
+      publicKey: Buffer.from(credential.publicKey),
+      counter: credential.counter,
+      transports: req.body.response?.transports || [],
+    });
+    await user.save();
+    webauthnChallenges.delete(user._id.toString());
+
+    res.json({ message: 'Biometric authentication registered successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- WebAuthn: Authentication Options ---
+app.post('/auth/webauthn/auth-options', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user || !user.webauthnCredentials?.length) {
+      return res.status(404).json({ message: 'No biometric credentials found for this account. Register Face ID first.' });
+    }
+
+    const allowCredentials = user.webauthnCredentials.map((c) => ({
+      id: isoBase64URL.toBuffer(c.id),
+      type: 'public-key',
+      transports: c.transports || [],
+    }));
+
+    const options = await generateAuthenticationOptions({
+      rpID,
+      allowCredentials,
+      userVerification: 'preferred',
+    });
+
+    webauthnChallenges.set(`auth-${user._id}`, options.challenge);
+    res.json({ ...options, userId: user._id });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- WebAuthn: Authentication Verification ---
+app.post('/auth/webauthn/auth-verify', async (req, res) => {
+  try {
+    const { userId, credential } = req.body;
+    if (!userId || !credential) return res.status(400).json({ message: 'Missing data' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const expectedChallenge = webauthnChallenges.get(`auth-${user._id}`);
+    if (!expectedChallenge) return res.status(400).json({ message: 'No challenge found. Start authentication first.' });
+
+    const dbCred = user.webauthnCredentials.find((c) => c.id === credential.id);
+    if (!dbCred) return res.status(400).json({ message: 'Credential not recognized' });
+
+    const verification = await verifyAuthenticationResponse({
+      response: credential,
+      expectedChallenge,
+      expectedOrigin: origin,
+      expectedRPID: rpID,
+      credential: {
+        id: dbCred.id,
+        publicKey: dbCred.publicKey,
+        counter: dbCred.counter,
+      },
+    });
+
+    if (!verification.verified) return res.status(401).json({ message: 'Biometric verification failed' });
+
+    // Update counter
+    dbCred.counter = verification.authenticationInfo.newCounter;
+    await user.save();
+    webauthnChallenges.delete(`auth-${user._id}`);
+
+    res.json({
+      token: signToken(user),
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- Check if user has WebAuthn credentials ---
+app.post('/auth/webauthn/has-credentials', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+    const user = await User.findOne({ email: email.toLowerCase() });
+    res.json({ hasCredentials: !!(user && user.webauthnCredentials && user.webauthnCredentials.length > 0) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

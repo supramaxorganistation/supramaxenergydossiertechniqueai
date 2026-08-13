@@ -990,6 +990,77 @@ table.data .row-actions {
   margin-bottom: 24px;
 }
 
+/* --- Login: Divider --- */
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* --- Login: Social / Biometric buttons --- */
+.login-social-btn {
+  margin-top: 6px;
+  font-size: 13px;
+}
+.login-social-btn::before {
+  margin-right: 6px;
+}
+
+/* --- Login: Links area --- */
+.login-links {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+}
+.login-links a {
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+.login-links a:hover {
+  text-decoration: underline;
+}
+.login-links-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.login-forgot-link {
+  font-size: 12.5px;
+}
+
+/* --- Login: btn-outline variant --- */
+.btn.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border-strong);
+  color: var(--text);
+  font-weight: 500;
+}
+.btn.btn-outline:hover {
+  background: var(--bg);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Login: msg-box margin --- */
+.login-card .msg-box {
+  margin-bottom: 10px;
+}
+
 /* ============================================
    RESPONSIVE
    ============================================ */

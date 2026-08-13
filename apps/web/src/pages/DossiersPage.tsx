@@ -16,12 +16,14 @@ export default function DossiersPage({
   currentUser,
   onOpenDossier,
   onNewDossier,
+  onEditDossier,
   onDeleteDossier,
 }: {
   dossiers: Dossier[];
   currentUser: User;
   onOpenDossier: (d: Dossier) => void;
   onNewDossier: () => void;
+  onEditDossier: (d: Dossier) => void;
   onDeleteDossier: (d: Dossier) => void;
 }) {
   const [search, setSearch] = useState('');
@@ -42,6 +44,7 @@ export default function DossiersPage({
   }, [dossiers, search, statusFilter]);
 
   const canCreate = currentUser.role === 'admin' || currentUser.role === 'technician';
+  const canEdit = canCreate;
 
   return (
     <>
@@ -122,6 +125,11 @@ export default function DossiersPage({
                       <button className="btn btn-sm btn-ghost" onClick={() => onOpenDossier(d)}>
                         Ouvrir
                       </button>
+                      {canEdit && (
+                        <button className="btn btn-sm btn-ghost" onClick={() => onEditDossier(d)}>
+                          Modifier
+                        </button>
+                      )}
                       {currentUser.role === 'admin' && (
                         <button
                           className="btn btn-sm btn-danger"
