@@ -1,8 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { api, setToken } from '../api';
 import type { User } from '../types';
+import FaceScannerModal from '../components/FaceScannerModal';
 
-type View = 'login' | 'register' | 'forgot' | 'biometric';
+type View = 'login' | 'register' | 'forgot';
+
+// Generate a strong random password (letters, digits, symbols)
+function generateStrongPassword(length = 16): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%^&*_-+=?';
+  const all = upper + lower + digits + symbols;
+  const rand = (n: number) => {
+    const arr = new Uint32Array(n);
+    window.crypto.getRandomValues(arr);
+    return Array.from(arr);
+  };
+  const pick = (chars: string, n: number) =>
+    rand(n).map((v) => chars[v % chars.length]).join('');
+  // Guarantee at least one char of each class, then fill the rest
+  const base = pick(upper, 3) + pick(lower, 5) + pick(digits, 3) + pick(symbols, 2);
+  const rest = pick(all, Math.max(0, length - base.length));
+  const combined = base + rest;
+  // Shuffle positions using fresh random values
+  const order = rand(combined.length);
+  return combined
+    .split('')
+    .map((ch, i) => ({ ch, k: order[i] }))
+    .sort((a, b) => a.k - b.k)
+    .map((x) => x.ch)
+    .join('');
+}
 
 declare global {
   interface Window {
@@ -32,7 +61,8 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [recaptchaSiteKey, setRecaptchaSiteKey] = useState('');
-  const [hasWebAuthn, setHasWebAuthn] = useState(false);
+  const [faceModal, setFaceModal] = useState(false);
+  const [showPw, setShowPw] = useState(false);
 
   const recaptchaRef = useRef<HTMLDivElement>(null);
   const recaptchaId = useRef<number | null>(null);
@@ -92,20 +122,17 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
     };
   }, [recaptchaSiteKey, view]);
 
-  // --- Load Google Identity Services ---
-  useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
-    if (!clientId || clientId.startsWith('YOUR_')) return;
-    if (document.querySelector('script[src*="accounts.google.com"]')) return;
+  // --- Google Identity Services ---
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+  const googleInitialized = useRef(false);
 
-    const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
-    s.async = true;
-    s.defer = true;
-    s.onload = () => {
-      if (!window.google) return;
+  useEffect(() => {
+    if (!googleClientId || googleClientId.startsWith('YOUR_')) return;
+
+    const initGoogle = () => {
+      if (!window.google || googleInitialized.current) return;
       window.google.accounts.id.initialize({
-        client_id: clientId,
+        client_id: googleClientId,
         callback: async (response: { credential: string }) => {
           setError('');
           setLoading(true);
@@ -120,38 +147,74 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           }
         },
       });
-      if (googleBtnRef.current) {
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'large',
-          text: 'signin_with',
-          shape: 'rectangular',
-          width: '100%',
-        });
-      }
+      googleInitialized.current = true;
     };
-    document.head.appendChild(s);
-  }, []);
 
-  // --- Check WebAuthn support for email ---
-  const checkWebAuthn = useCallback(async () => {
-    if (!email || !window.PublicKeyCredential) {
-      setHasWebAuthn(false);
-      return;
-    }
-    try {
-      const { hasCredentials } = await api.webauthnHasCredentials(email);
-      setHasWebAuthn(hasCredentials);
-    } catch {
-      setHasWebAuthn(false);
-    }
-  }, [email]);
+    const renderGoogleButton = () => {
+      if (!window.google || !googleBtnRef.current || !googleInitialized.current) return;
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 352,
+      });
+    };
 
+    // Load script if needed
+    if (!document.querySelector('script[src*="accounts.google.com"]')) {
+      const s = document.createElement('script');
+      s.src = 'https://accounts.google.com/gsi/client';
+      s.async = true;
+      s.defer = true;
+      s.onload = () => {
+        initGoogle();
+        renderGoogleButton();
+      };
+      document.head.appendChild(s);
+    } else {
+      initGoogle();
+      renderGoogleButton();
+    }
+  }, [googleClientId, onLogin]);
+
+  // Re-render Google button when returning to login/register view
   useEffect(() => {
-    const t = setTimeout(checkWebAuthn, 600);
-    return () => clearTimeout(t);
-  }, [email, checkWebAuthn]);
+    if (!window.google || !googleBtnRef.current || !googleInitialized.current) return;
+    if (view !== 'forgot') {
+      window.google.accounts.id.renderButton(googleBtnRef.current, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 352,
+      });
+    }
+  }, [view]);
+
+  // --- Face ID login (camera scanner) ---
+  const pendingFaceAuth = useRef<{ token: string; user: User } | null>(null);
+
+  // Called by the scanner for each detected face: true only if the backend
+  // recognizes this specific face as an enrolled user.
+  const handleFaceVerify = async (descriptor: number[]): Promise<boolean> => {
+    try {
+      pendingFaceAuth.current = await api.faceLogin(descriptor);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Called after the green circle: log the matched user in
+  const handleFaceMatched = () => {
+    const data = pendingFaceAuth.current;
+    if (!data) return;
+    setToken(data.token);
+    onLogin(data.user);
+  };
 
   // --- Get reCAPTCHA token ---
   const getRecaptchaToken = (): string | undefined => {
@@ -197,72 +260,6 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
     }
   };
 
-  // === FACE ID / WEBAUTHN LOGIN ===
-  const handleFaceIdLogin = async () => {
-    setError('');
-    setLoading(true);
-    try {
-      const options = await api.webauthnAuthOptions(email);
-      const { userId, allowCredentials, challenge, ...rest } = options;
-
-      const credential = await navigator.credentials.get({
-        publicKey: {
-          ...rest,
-          challenge: Uint8Array.from(atob(challenge.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
-          allowCredentials: (allowCredentials || []).map((c: any) => ({
-            id: Uint8Array.from(atob(c.id.replace(/-/g, '+').replace(/_/g, '/')), (x) => x.charCodeAt(0)),
-            type: 'public-key' as const,
-          })),
-        },
-      }) as PublicKeyCredential | null;
-
-      if (!credential) throw new Error('Authentication cancelled');
-      const data = await api.webauthnAuthVerify(userId, credential);
-      setToken(data.token);
-      onLogin(data.user);
-    } catch (err: any) {
-      setError(err.message || 'Biometric authentication failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // === WEBAUTHN REGISTER ===
-  const handleWebAuthnRegister = async () => {
-    setError('');
-    setSuccess('');
-    setLoading(true);
-    try {
-      const options = await api.webauthnRegisterOptions();
-      const { challenge, user, excludeCredentials, pubKeyCredParams, ...restOptions } = options;
-
-      const credential = await navigator.credentials.create({
-        publicKey: {
-          ...restOptions,
-          challenge: Uint8Array.from(atob(challenge.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
-          user: {
-            ...user,
-            id: Uint8Array.from(atob(user.id.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
-          },
-          pubKeyCredParams: pubKeyCredParams || [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-          excludeCredentials: excludeCredentials?.map((c: any) => ({
-            id: Uint8Array.from(atob(c.id.replace(/-/g, '+').replace(/_/g, '/')), (c) => c.charCodeAt(0)),
-            type: 'public-key' as const,
-          })) || [],
-        },
-      }) as PublicKeyCredential | null;
-
-      if (!credential) throw new Error('Registration cancelled');
-      const result = await api.webauthnRegisterVerify(credential);
-      setSuccess(result.message || 'Face ID registered successfully!');
-    } catch (err: any) {
-      setError(err.message || 'Biometric registration failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isBiometricView = view === 'biometric';
   const isForgot = view === 'forgot';
   const isRegister = view === 'register';
 
@@ -288,16 +285,14 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
       <div className="login-panel">
         <div className="login-card">
           <h2>
-            {isRegister ? 'Créer un compte' : isForgot ? 'Mot de passe oublié' : isBiometricView ? 'Connexion biométrique' : 'Connexion'}
+            {isRegister ? 'Créer un compte' : isForgot ? 'Mot de passe oublié' : 'Connexion'}
           </h2>
           <p className="login-sub">
             {isRegister
               ? 'Créez votre compte pour accéder à la plateforme'
               : isForgot
-                ? 'Entrez votre email pour notifier l\'administrateur'
-                : isBiometricView
-                  ? 'Utilisez Face ID ou votre empreinte digitale'
-                  : 'Accédez à vos dossiers techniques'}
+                ? 'Entrez votre email pour recevoir le lien de réinitialisation'
+                : 'Accédez à vos dossiers techniques'}
           </p>
 
           <form noValidate onSubmit={handleSubmit}>
@@ -313,15 +308,40 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
               <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="exemple@mail.com" />
             </div>
 
-            {!isForgot && !isBiometricView && (
+            {!isForgot && (
               <div className="form-group">
-                <label className="form-label">Mot de passe</label>
-                <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <div className="pw-label-row">
+                  <label className="form-label">Mot de passe</label>
+                  {isRegister && (
+                    <button
+                      type="button"
+                      className="pw-suggest"
+                      onClick={() => { setPassword(generateStrongPassword()); setShowPw(true); }}
+                      title="Générer un mot de passe fort"
+                    >
+                      🔑 Suggérer un mot de passe
+                    </button>
+                  )}
+                </div>
+                <div className="pw-input-wrap">
+                  <input
+                    className="input"
+                    type={showPw && isRegister ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                  {isRegister && password && (
+                    <button type="button" className="pw-eye" onClick={() => setShowPw((s) => !s)} title={showPw ? 'Masquer' : 'Afficher'}>
+                      {showPw ? '🙈' : '👁'}
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
             {/* reCAPTCHA (login/register only) */}
-            {recaptchaSiteKey && !isForgot && !isBiometricView && (
+            {recaptchaSiteKey && !isForgot && (
               <div style={{ marginBottom: 14 }}>
                 <div ref={recaptchaRef}></div>
               </div>
@@ -330,60 +350,39 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
             {error && <div className="msg-box error">{error}</div>}
             {success && <div className="msg-box info">{success}</div>}
 
-            {!isBiometricView && (
-              <button className="btn btn-primary btn-block" type="submit" disabled={loading} style={{ marginTop: 8 }}>
-                {loading
-                  ? 'Patientez...'
-                  : isRegister
-                    ? 'S\'inscrire'
-                    : isForgot
-                      ? 'Notifier l\'administrateur'
-                      : 'Se connecter'}
-              </button>
-            )}
+            <button className="btn btn-primary btn-block" type="submit" disabled={loading} style={{ marginTop: 8 }}>
+              {loading
+                ? 'Patientez...'
+                : isRegister
+                  ? 'S\'inscrire'
+                  : isForgot
+                    ? 'Envoyer le lien de réinitialisation'
+                    : 'Se connecter'}
+            </button>
           </form>
 
-          {/* Biometric login */}
-          {isBiometricView && (
-            <button className="btn btn-primary btn-block" onClick={handleFaceIdLogin} disabled={loading} style={{ marginTop: 8 }}>
-              {loading ? 'Vérification...' : '🔐 Utiliser Face ID / Biométrie'}
-            </button>
-          )}
-
-          {/* Register Face ID (only when logged in via password) */}
-          {!isForgot && !isRegister && !isBiometricView && email && window.PublicKeyCredential && (
+          {/* Face ID login (opens the camera scanner) */}
+          {!isForgot && !isRegister && (
             <button
               type="button"
-              className="btn btn-ghost btn-block"
-              onClick={handleWebAuthnRegister}
+              className="btn btn-outline btn-block"
+              onClick={() => { setError(''); setFaceModal(true); }}
               disabled={loading}
-              style={{ marginTop: 6, fontSize: 12.5 }}
+              style={{ marginTop: 6 }}
             >
-              🔒 Enregistrer Face ID pour ce compte
+              🔐 Se connecter avec Face ID
             </button>
           )}
 
           {/* Divider + Social */}
-          {!isForgot && !isBiometricView && (
+          {!isForgot && (
             <>
               <div className="login-divider">
                 <span>ou continuer avec</span>
               </div>
 
               {/* Google button */}
-              <div ref={googleBtnRef} style={{ marginBottom: 10 }}></div>
-
-              {/* Face ID */}
-              {hasWebAuthn && email && (
-                <button
-                  type="button"
-                  className="btn btn-outline btn-block login-social-btn"
-                  onClick={handleFaceIdLogin}
-                  disabled={loading}
-                >
-                  🔐 Se connecter avec Face ID / Biométrie
-                </button>
-              )}
+              <div ref={googleBtnRef} className="login-google-container"></div>
             </>
           )}
 
@@ -402,12 +401,6 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
                   Se connecter
                 </a>
               </span>
-            ) : isBiometricView ? (
-              <span>
-                <a href="#" onClick={(e) => { e.preventDefault(); setView('login'); setError(''); }}>
-                  ← Retour
-                </a>
-              </span>
             ) : (
               <div className="login-links-row">
                 <span>
@@ -424,6 +417,15 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           </div>
         </div>
       </div>
+
+      {faceModal && (
+        <FaceScannerModal
+          mode="login"
+          onClose={() => setFaceModal(false)}
+          onVerify={handleFaceVerify}
+          onMatched={handleFaceMatched}
+        />
+      )}
     </div>
   );
 }
@@ -435,6 +437,15 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+
+  // Suggest a strong password and fill both fields with it
+  const suggestPassword = () => {
+    const pw = generateStrongPassword();
+    setNewPassword(pw);
+    setConfirm(pw);
+    setShowPw(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -476,12 +487,36 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
 
           <form noValidate onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Nouveau mot de passe</label>
-              <input className="input" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
+              <div className="pw-label-row">
+                <label className="form-label">Nouveau mot de passe</label>
+                <button type="button" className="pw-suggest" onClick={suggestPassword} title="Générer un mot de passe fort">
+                  🔑 Suggérer un mot de passe
+                </button>
+              </div>
+              <div className="pw-input-wrap">
+                <input
+                  className="input"
+                  type={showPw ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+                {newPassword && (
+                  <button type="button" className="pw-eye" onClick={() => setShowPw((s) => !s)} title={showPw ? 'Masquer' : 'Afficher'}>
+                    {showPw ? '🙈' : '👁'}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label">Confirmer le mot de passe</label>
-              <input className="input" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="••••••••" />
+              <input
+                className="input"
+                type={showPw ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                placeholder="••••••••"
+              />
             </div>
             {error && <div className="msg-box error">{error}</div>}
             {success && <div className="msg-box info">{success}</div>}

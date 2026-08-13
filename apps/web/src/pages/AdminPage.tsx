@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api';
 import type { Role, User } from '../types';
 import { Badge, LoadingScreen, EmptyState } from '../components/ui';
+import FaceScannerModal from '../components/FaceScannerModal';
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: 'Administrateur',
@@ -20,6 +21,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState<string | null>(null);
+  const [faceUser, setFaceUser] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
@@ -75,6 +77,20 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
       setError(err.message || 'Erreur lors de la création');
     } finally {
       setCreating(false);
+    }
+  };
+
+  // --- Face enrollment (account manager) ---
+  const handleFaceEnrolled = async (descriptor: number[]) => {
+    if (!faceUser) return;
+    const target = faceUser;
+    try {
+      await api.faceRegister(target._id, descriptor);
+      setUsers((prev) => prev.map((u) => (u._id === target._id ? { ...u, hasFace: true } : u)));
+      setFaceUser(null);
+    } catch (err: any) {
+      setError(err.message || 'Erreur lors de l\'enregistrement du visage');
+      setFaceUser(null);
     }
   };
 
@@ -181,6 +197,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
                   <th>Utilisateur</th>
                   <th>Email</th>
                   <th>Rôle</th>
+                  <th>Face ID</th>
                   <th>Inscrit le</th>
                   <th>Changer le rôle</th>
                 </tr>
@@ -196,6 +213,27 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
                       </td>
                       <td>{user.email}</td>
                       <td><Badge color={ROLE_BADGE[user.role]}>{ROLE_LABELS[user.role]}</Badge></td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {user.hasFace ? (
+                          <>
+                            <Badge color="green">✓ Enregistré</Badge>{' '}
+                            <button
+                              className="btn btn-sm btn-ghost"
+                              onClick={() => { setError(''); setFaceUser(user); }}
+                              title="Ré-enregistrer le visage"
+                            >
+                              Rescan
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => { setError(''); setFaceUser(user); }}
+                          >
+                            🔐 Ajouter le visage
+                          </button>
+                        )}
+                      </td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString('fr-FR') : '—'}
                       </td>
@@ -220,6 +258,14 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
           </div>
         )}
       </div>
+
+      {faceUser && (
+        <FaceScannerModal
+          mode="register"
+          onClose={() => setFaceUser(null)}
+          onCaptured={handleFaceEnrolled}
+        />
+      )}
     </>
   );
 }

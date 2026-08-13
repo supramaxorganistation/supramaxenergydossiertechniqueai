@@ -116,28 +116,16 @@ export const api = {
       body: JSON.stringify({ token, newPassword }),
     }),
 
-  // WebAuthn / Face ID
-  webauthnRegisterOptions: () =>
-    request<any>('/auth/webauthn/register-options', { method: 'POST' }),
-  webauthnRegisterVerify: (response: any) =>
-    request<{ message: string }>('/auth/webauthn/register-verify', {
+  // Face ID (camera-based face recognition)
+  faceLogin: (descriptor: number[]) =>
+    request<{ token: string; user: User }>('/auth/face-login', {
       method: 'POST',
-      body: JSON.stringify(response),
+      body: JSON.stringify({ descriptor }),
     }),
-  webauthnAuthOptions: (email: string) =>
-    request<any>('/auth/webauthn/auth-options', {
+  faceRegister: (userId: string, descriptor: number[]) =>
+    request<{ message: string; hasFace: boolean }>('/auth/face-register', {
       method: 'POST',
-      body: JSON.stringify({ email }),
-    }),
-  webauthnAuthVerify: (userId: string, credential: any) =>
-    request<{ token: string; user: User }>('/auth/webauthn/auth-verify', {
-      method: 'POST',
-      body: JSON.stringify({ userId, credential }),
-    }),
-  webauthnHasCredentials: (email: string) =>
-    request<{ hasCredentials: boolean }>('/auth/webauthn/has-credentials', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ userId, descriptor }),
     }),
 
   // Dossiers

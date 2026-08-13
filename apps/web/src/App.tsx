@@ -11,6 +11,7 @@ import DossiersPage from './pages/DossiersPage';
 import DossierDetailPage from './pages/DossierDetailPage';
 import DossierCreatePage from './pages/DossierCreatePage';
 import AdminPage from './pages/AdminPage';
+import ProfilePage from './pages/ProfilePage';
 import ErpDashboardPage from './pages/ErpDashboardPage';
 import CustomersPage from './pages/CustomersPage';
 import ProductsPage from './pages/ProductsPage';
@@ -33,6 +34,14 @@ function App() {
   const [editDossierId, setEditDossierId] = useState<string | null>(null);
   const [compliance, setCompliance] = useState<ComplianceReport | null>(null);
   const [isLoadingCompliance, setIsLoadingCompliance] = useState(false);
+  const [hashRoute, setHashRoute] = useState(window.location.hash);
+
+  // Track hash changes so hash-based routes (e.g. reset-password) re-render
+  useEffect(() => {
+    const onHashChange = () => setHashRoute(window.location.hash);
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   // Initialize ERP API with token getter
   useEffect(() => { initErpApi(getToken); }, []);
@@ -142,9 +151,8 @@ function App() {
 
   if (!currentUser) {
     // Check for reset-password hash route
-    const hash = window.location.hash;
-    if (hash.startsWith('#/reset-password/')) {
-      const token = hash.replace('#/reset-password/', '');
+    if (hashRoute.startsWith('#/reset-password/')) {
+      const token = hashRoute.replace('#/reset-password/', '');
       return <ResetPasswordPage token={token} onDone={() => { window.location.hash = ''; }} />;
     }
     return <LoginPage onLogin={handleLogin} />;
@@ -162,6 +170,7 @@ function App() {
     'dossier-create': { title: 'Nouveau dossier', subtitle: 'Créez un dossier technique STEG' },
     'dossier-edit': { title: editDossier ? `Modifier — ${editDossier.customerDetails.name}` : 'Modifier dossier', subtitle: 'Modifiez les informations du dossier' },
     admin: { title: 'Administration', subtitle: 'Gestion des utilisateurs et des rôles' },
+    profile: { title: 'Mon profil', subtitle: 'Gérez votre compte et votre Face ID' },
     'erp-dashboard': { title: 'ERP Overview', subtitle: 'Enterprise Resource Planning' },
     'erp-customers': { title: 'CRM', subtitle: 'Customers & Suppliers management' },
     'erp-products': { title: 'Products', subtitle: 'Product catalog & inventory' },
@@ -236,6 +245,10 @@ function App() {
       )}
 
       {screen === 'admin' && currentUser.role === 'admin' && <AdminPage currentUser={currentUser} />}
+
+      {screen === 'profile' && (
+        <ProfilePage currentUser={currentUser} onUserUpdated={setCurrentUser} />
+      )}
 
       {screen === 'erp-dashboard' && <ErpDashboardPage onNavigate={setScreen} />}
       {screen === 'erp-customers' && <CustomersPage />}

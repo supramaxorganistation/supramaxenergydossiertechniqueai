@@ -1,6 +1,6 @@
 import type { User } from '../types';
 
-export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'dossier-edit' | 'admin' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
+export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'dossier-edit' | 'admin' | 'profile' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
 
 const NAV = [
   { key: 'dashboard', icon: '📊', label: 'Tableau de bord' },
@@ -108,6 +108,14 @@ export default function AppLayout({
             <h1>{title}</h1>
             {subtitle && <p>{subtitle}</p>}
           </div>
+          <button
+            className={`profile-btn ${active === 'profile' ? 'active' : ''}`}
+            onClick={() => onNavigate('profile')}
+            title="Gérer mon profil"
+          >
+            <span className="profile-btn-avatar">{initials}</span>
+            <span className="profile-btn-label">Mon profil</span>
+          </button>
         </header>
         <div className="content">{children}</div>
       </div>

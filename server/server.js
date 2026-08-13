@@ -8,6 +8,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
 import nodemailer from 'nodemailer';
 import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthenticationOptions, verifyAuthenticationResponse } from '@simplewebauthn/server';
 import { isoBase64URL } from '@simplewebauthn/server/helpers';
@@ -17,7 +18,9 @@ import { generateStegPDF } from './services/pdfGenerator.js';
 import { generateStegDOCX } from './services/docxTemplateFiller.js';
 import { erpRouter } from './erpRoutes.js';
 
-dotenv.config();
+// Load config from the single root .env (monorepo root)
+const __serverDir = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__serverDir, '..', '.env') });
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -83,6 +86,8 @@ const userSchema = new mongoose.Schema({
     transports: [String],
     createdAt: { type: Date, default: Date.now }
   }],
+  // 128-dim face embedding captured from the webcam scanner (face-api.js)
+  faceDescriptor: [Number],
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -351,7 +356,7 @@ app.get('/me', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     res.json({
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, hasFace: !!(user.faceDescriptor && user.faceDescriptor.length === 128), createdAt: user.createdAt }
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -361,6 +366,70 @@ app.get('/me', authMiddleware, async (req, res) => {
 // ============================================
 // AUTH EXTENSIONS
 // ============================================
+
+// Euclidean distance between two face descriptors (match if < 0.6)
+function faceDistance(a, b) {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    const d = (a[i] || 0) - (b[i] || 0);
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+// --- Face ID login: match a captured descriptor against enrolled faces ---
+app.post('/auth/face-login', async (req, res) => {
+  try {
+    const { descriptor } = req.body;
+    if (!Array.isArray(descriptor) || descriptor.length !== 128) {
+      return res.status(400).json({ message: 'Descripteur facial invalide' });
+    }
+
+    const users = await User.find({ faceDescriptor: { $exists: true, $not: { $size: 0 } } });
+    let bestUser = null;
+    let bestDist = Infinity;
+    for (const u of users) {
+      if (!u.faceDescriptor || u.faceDescriptor.length !== 128) continue;
+      const d = faceDistance(descriptor, u.faceDescriptor);
+      if (d < bestDist) { bestDist = d; bestUser = u; }
+    }
+
+    if (!bestUser || bestDist > 0.5) {
+      return res.status(401).json({ message: 'Visage non reconnu. Enregistrez votre visage depuis le gestionnaire de comptes.' });
+    }
+
+    res.json({
+      token: signToken(bestUser),
+      user: { id: bestUser._id, name: bestUser.name, email: bestUser.email, role: bestUser.role }
+    });
+  } catch (error) {
+    console.error('Face login error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// --- Face ID enrollment: admin can enroll anyone, users can enroll themselves ---
+app.post('/auth/face-register', authMiddleware, async (req, res) => {
+  try {
+    const { userId, descriptor } = req.body;
+    if (!Array.isArray(descriptor) || descriptor.length !== 128) {
+      return res.status(400).json({ message: 'Descripteur facial invalide' });
+    }
+    const targetId = userId || req.user.id;
+    if (targetId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    const user = await User.findById(targetId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.faceDescriptor = descriptor;
+    await user.save();
+    res.json({ message: 'Visage enregistré avec succès.', hasFace: true });
+  } catch (error) {
+    console.error('Face register error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // --- reCAPTCHA site key (public, safe to expose) ---
 app.get('/auth/recaptcha-key', (req, res) => {
@@ -372,7 +441,7 @@ app.get('/auth/google-config', (req, res) => {
   res.json({ clientId: GOOGLE_CLIENT_ID });
 });
 
-// --- Forgot Password: notify admin ---
+// --- Forgot Password: send reset link to the user's own email ---
 app.post('/auth/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
@@ -380,8 +449,12 @@ app.post('/auth/forgot-password', async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      // Don't reveal if user exists
-      return res.json({ message: 'If this email exists, the admin has been notified.' });
+      // Don't reveal whether an account exists for this email
+      return res.json({ message: 'Si cet email existe, un lien de réinitialisation lui a été envoyé.' });
+    }
+
+    if (!mailTransporter) {
+      return res.status(500).json({ message: 'Service email non configuré (SMTP manquant).' });
     }
 
     // Generate a reset token
@@ -390,22 +463,21 @@ app.post('/auth/forgot-password', async (req, res) => {
     user.passwordResetExpires = new Date(Date.now() + 3600000); // 1 hour
     await user.save();
 
-    // Send email to admin
-    if (mailTransporter) {
-      await mailTransporter.sendMail({
-        from: process.env.SMTP_USER || ADMIN_EMAIL,
-        to: ADMIN_EMAIL,
-        subject: `[Supramax] Password reset request — ${user.email}`,
-        html: `<h3>Password Reset Request</h3>
-          <p><strong>User:</strong> ${user.name} (${user.email})</p>
-          <p>Click below to reset their password (valid 1 hour):</p>
-          <a href="${FRONTEND_URL}/#/reset-password/${resetToken}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;">Reset Password</a>
-          <p style="margin-top:16px;color:#666;">If you did not expect this request, you can safely ignore it.</p>`,
-      });
-    }
+    // Send the reset link directly to the account owner
+    await mailTransporter.sendMail({
+      from: process.env.SMTP_USER || ADMIN_EMAIL,
+      to: user.email,
+      subject: '[Supramax Energy] Réinitialisation de votre mot de passe',
+      html: `<h3>Bonjour ${user.name},</h3>
+        <p>Vous avez demandé la réinitialisation de votre mot de passe Supramax Energy.</p>
+        <p>Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe (lien valable 1 heure) :</p>
+        <a href="${FRONTEND_URL}/#/reset-password/${resetToken}" style="display:inline-block;padding:12px 24px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;">Réinitialiser mon mot de passe</a>
+        <p style="margin-top:16px;color:#666;">Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet email — votre mot de passe restera inchangé.</p>`,
+    });
 
-    res.json({ message: 'If this email exists, the admin has been notified.' });
+    res.json({ message: 'Si cet email existe, un lien de réinitialisation lui a été envoyé.' });
   } catch (error) {
+    console.error('Forgot password error:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -638,6 +710,7 @@ app.get('/api/users', authMiddleware, authorizeRoles('admin'), async (req, res) 
         name: u.name,
         email: u.email,
         role: u.role,
+        hasFace: !!(u.faceDescriptor && u.faceDescriptor.length === 128),
         createdAt: u.createdAt
       }))
     );
@@ -667,6 +740,7 @@ app.put('/api/users/:id/role', authMiddleware, authorizeRoles('admin'), async (r
       name: user.name,
       email: user.email,
       role: user.role,
+      hasFace: !!(user.faceDescriptor && user.faceDescriptor.length === 128),
       createdAt: user.createdAt
     });
   } catch (error) {
