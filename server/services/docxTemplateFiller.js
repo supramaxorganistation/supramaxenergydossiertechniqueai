@@ -182,7 +182,7 @@ function resolvePlaceholders(xmlText, fieldMap) {
  *
  * Merge order (last wins):
  *   1. buildFieldMap() — computed dossier / compliance values
- *   2. AI-generated French prose for empty narrative keys (Gemini)
+ *   2. AI-generated French prose for empty narrative keys (Qwen3-8B)
  *   3. dossier.variables — user overrides defined in the dossier UI
  *
  * @param {Object} dossierData      – full dossier document (may carry .variables)

@@ -1216,7 +1216,7 @@ app.post('/api/dossiers/:id/chat', authMiddleware, async (req, res) => {
     try {
       ({ reply, actions } = await runAgent({ dossier, message: String(message), images: safeImages }));
     } catch (agentErr) {
-      if (agentErr.geminiAuth) {
+      if (agentErr.aiAuth) {
         fallback = true;
         reply = ruleBasedGuidance(dossier);
       } else {

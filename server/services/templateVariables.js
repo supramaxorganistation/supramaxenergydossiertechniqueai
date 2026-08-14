@@ -4,7 +4,7 @@
  * Catalogue of every {{placeholder}} available in
  * assets/templates/template-safe-placeholders.docx, with French labels,
  * grouping for the UI, and the list of keys that can be auto-generated
- * by AI (Gemini) in French.
+ * by AI (Qwen3-8B via the HF router) in French.
  */
 
 import { AI_TEXT_KEYS } from './aiTextGenerator.js';

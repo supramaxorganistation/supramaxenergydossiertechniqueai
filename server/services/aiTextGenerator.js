@@ -1,5 +1,5 @@
 /**
- * AI Text Generator (Gemini)
+ * AI Text Generator (HF router — Qwen3-8B)
  *
  * Generates professional French prose for the narrative placeholders of the
  * STEG technical dossier template (introduction, structure description,
@@ -7,7 +7,7 @@
  * key — falling back to neutral default French text when the API fails.
  */
 
-import { GoogleGenAI } from '@google/genai';
+import { chatJson } from './aiClient.js';
 
 /** Placeholder keys whose content is generated as French prose. */
 export const AI_TEXT_KEYS = [
@@ -18,7 +18,7 @@ export const AI_TEXT_KEYS = [
     'fuse_desc',
 ];
 
-/** Neutral French fallbacks used when Gemini is unavailable / fails. */
+/** Neutral French fallbacks used when the AI is unavailable / fails. */
 export const AI_TEXT_DEFAULTS = {
     introduction:
         "Le présent dossier technique décrit l'étude de l'installation photovoltaïque raccordée au réseau Basse Tension de la STEG. " +
@@ -82,15 +82,13 @@ export async function generateAiTexts(dossierData, complianceReport, keys = AI_T
     const wanted = keys.filter((k) => AI_TEXT_KEYS.includes(k));
     if (wanted.length === 0) return {};
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.HF_TOKEN;
     if (!apiKey) {
-        console.warn('[AI-TEXT] GEMINI_API_KEY missing → using default French texts');
+        console.warn('[AI-TEXT] HF_TOKEN missing → using default French texts');
         return Object.fromEntries(wanted.map((k) => [k, AI_TEXT_DEFAULTS[k]]));
     }
 
     try {
-        const ai = new GoogleGenAI({ apiKey });
-
         const prompt =
             `Tu rédiges des extraits d'un dossier technique photovoltaïque (raccordement Basse Tension STEG, Tunisie). ` +
             `Écris en français professionnel et technique. Voici le contexte de l'installation :\n` +
@@ -99,20 +97,7 @@ export async function generateAiTexts(dossierData, complianceReport, keys = AI_T
             wanted.map((k) => `- ${PROMPT_BY_KEY[k]}`).join('\n') +
             `\n\nPas de texte hors JSON, pas de balises markdown.`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
-            contents: prompt,
-            config: { responseMimeType: 'application/json' },
-        });
-        let text = response.text;
-        let parsed;
-        try {
-            parsed = JSON.parse(text);
-        } catch {
-            const m = text.match(/\{[\s\S]*\}/);
-            if (!m) throw new Error('AI response is not JSON');
-            parsed = JSON.parse(m[0]);
-        }
+        const parsed = await chatJson(prompt);
 
         const out = {};
         for (const k of wanted) {
@@ -122,7 +107,7 @@ export async function generateAiTexts(dossierData, complianceReport, keys = AI_T
         console.log('[AI-TEXT] Generated:', wanted.join(', '));
         return out;
     } catch (error) {
-        console.error('[AI-TEXT] Gemini failed, using defaults:', error.message);
+        console.error('[AI-TEXT] AI failed, using defaults:', error.message);
         return Object.fromEntries(wanted.map((k) => [k, AI_TEXT_DEFAULTS[k]]));
     }
 }
