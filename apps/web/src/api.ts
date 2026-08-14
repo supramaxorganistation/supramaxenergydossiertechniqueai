@@ -1,4 +1,4 @@
-import type { Dossier, User, ComplianceReport, CatalogEquipment } from './types';
+import type { Dossier, User, ComplianceReport, CatalogEquipment, TemplateVariable, ChatMessage } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -140,6 +140,26 @@ export const api = {
   compliance: (id: string) => request<ComplianceReport>(`/api/dossiers/${id}/compliance`),
   exportPdf: (id: string) => requestBlob(`/api/dossiers/${id}/export-pdf`),
   exportDocx: (id: string) => requestBlob(`/api/dossiers/${id}/export-docx`),
+
+  // Template variables ({{placeholders}} of the DOCX template)
+  templateVariables: () => request<TemplateVariable[]>('/api/dossiers/template-variables'),
+  aiTexts: (id: string) =>
+    request<{ texts: Record<string, string> }>(`/api/dossiers/${id}/ai-texts`, { method: 'POST' }),
+
+  // AI assistant agent (chatbot with database access)
+  chat: (id: string, message: string, images?: { mimeType: string; base64: string }[]) =>
+    request<{
+      reply: string;
+      actions: { tool: string; note?: string }[];
+      fallback: boolean;
+      history: ChatMessage[];
+    }>(`/api/dossiers/${id}/chat`, {
+      method: 'POST',
+      body: JSON.stringify({ message, images: images || [] }),
+    }),
+
+  // Installer logo (file variable stored in server/assets/)
+  brandingLogo: () => requestBlob('/api/branding/logo'),
 
   uploadFile: (id: string, file: File) => {
     const form = new FormData();

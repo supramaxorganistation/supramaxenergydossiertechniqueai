@@ -2,9 +2,11 @@ import { useCallback, useRef, useState } from 'react';
 import { api, fileUrl } from '../api';
 import type { ComplianceReport, Dossier, User } from '../types';
 import CompliancePanel from '../components/CompliancePanel';
+import VariablesPanel from '../components/VariablesPanel';
+import AssistantChat from '../components/AssistantChat';
 import { StatusBadge, Badge, EmptyState } from '../components/ui';
 
-type Tab = 'overview' | 'compliance' | 'equipment' | 'export';
+type Tab = 'overview' | 'compliance' | 'assistant' | 'equipment' | 'variables' | 'export';
 
 function kv(label: string, value: React.ReactNode) {
   return (
@@ -148,8 +150,17 @@ export default function DossierDetailPage({
           ✅ Conformité STEG
           {compliance && !complianceOk && complianceError > 0 && <span style={{ marginLeft: 6 }}>❌</span>}
         </button>
+        <button className={`tab ${tab === 'assistant' ? 'active' : ''}`} onClick={() => setTab('assistant')}>
+          🤖 Assistant IA
+        </button>
         <button className={`tab ${tab === 'equipment' ? 'active' : ''}`} onClick={() => setTab('equipment')}>
           🤖 Équipements & documents
+        </button>
+        <button className={`tab ${tab === 'variables' ? 'active' : ''}`} onClick={() => setTab('variables')}>
+          📝 Variables
+          {dossier.variables && Object.keys(dossier.variables).length > 0 && (
+            <span style={{ marginLeft: 6 }}>●</span>
+          )}
         </button>
         <button className={`tab ${tab === 'export' ? 'active' : ''}`} onClick={() => setTab('export')}>
           📄 Export
@@ -241,6 +252,10 @@ export default function DossierDetailPage({
             <EmptyState icon="✅" title="Rapport indisponible" subtitle="Les données du dossier sont insuffisantes pour le calcul." />
           )}
         </div>
+      )}
+
+      {tab === 'assistant' && (
+        <AssistantChat dossier={dossier} canManage={canManage} onSaved={onRefresh} />
       )}
 
       {tab === 'equipment' && (
@@ -366,13 +381,18 @@ export default function DossierDetailPage({
         </>
       )}
 
+      {tab === 'variables' && (
+        <VariablesPanel dossier={dossier} canManage={canManage} onSaved={onRefresh} />
+      )}
+
       {tab === 'export' && (
         <div className="card">
           <h4 className="card-title">📄 Génération du dossier technique STEG</h4>
           <p className="card-subtitle">
-            Génère un dossier technique complet conforme STEG incluant : ajustements de température,
-            compatibilité des chaînes, dimensionnement des câbles (NF C 15-100), analyse des chutes
-            de tension, protections DC/AC, tenue au vent et résumé de conformité.
+            Génère le dossier technique à partir du modèle Word officiel (template-safe-placeholders) :
+            page de garde, Table des matières automatique, notes de calcul STEG, protections DC/AC,
+            câbles (NF C 15-100). Les textes narratifs sont rédigés en français par l'IA et vos
+            variables (onglet 📝) remplacent les balises du modèle.
           </p>
           <button
             className="btn btn-success"

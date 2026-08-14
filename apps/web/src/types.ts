@@ -99,12 +99,37 @@ export type Dossier = {
     statusOk: boolean;
   };
   complianceReport?: ComplianceReport;
+  /** User overrides for the DOCX template {{placeholders}} */
+  variables?: Record<string, string>;
+  chatHistory?: ChatMessage[];
   status: DossierStatus;
   documents: DossierDocument[];
   createdBy: { _id?: string; name: string; email: string };
   assignedTechnician?: { _id?: string; name: string; email: string };
   createdAt: string;
   updatedAt?: string;
+};
+
+/** Message of the dossier AI assistant conversation (persisted in DB) */
+export type ChatMessage = {
+  role: 'user' | 'assistant';
+  text: string;
+  /** Number of images attached to a user message */
+  images?: number;
+  /** Tools the agent executed (assistant messages only) */
+  actions?: { tool: string; note?: string }[];
+  /** True when the reply came from the offline rule-based fallback */
+  fallback?: boolean;
+  at?: string;
+};
+
+/** Entry of the template variables catalogue (GET /api/dossiers/template-variables) */
+export type TemplateVariable = {
+  key: string;
+  label: string;
+  group: string;
+  ai: boolean;
+  long: boolean;
 };
 
 export type ComplianceReport = {

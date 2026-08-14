@@ -10,6 +10,9 @@
  */
 
 // ── helpers ──────────────────────────────────────────────────────────
+
+/** The installer is always Supramax Energy (branding requirement). */
+export const INSTALLER_NAME = 'SUPRAMAX ENERGY';
 function fmt(value, digits = 2) {
     const n = Number(value);
     if (!Number.isFinite(n)) return '';
@@ -93,9 +96,6 @@ export function buildFieldMap(dossierData, report) {
     const dcCableRef = dcSection ? 'EN 50618 H1Z2Z2-K ' + fr0(dcSection) + ' mm²' : '';
     const acCableRef = 'H05VV-F';
 
-    const installer = (typeof dd.createdBy === 'object' && dd.createdBy?.name)
-        ? dd.createdBy.name
-        : (ps.installer || 'Eminence Energie');
     const clientName = cd.name || '';
     const reference = cd.stegMeterRef || ps.stegMeterRef || '';
     const address = cd.address || ps.address || '';
@@ -168,6 +168,12 @@ export function buildFieldMap(dossierData, report) {
     const today = new Date();
     const dateStr = today.toLocaleDateString('fr-FR', { year: 'numeric', month: '2-digit', day: '2-digit' });
 
+    // Annexes documentation: uploaded documents, else standard documentation list
+    const docs = dd.documents || [];
+    const docsList = docs.length > 0
+        ? docs.map((d, i) => `${i + 1}. ${d.fileName}`).join('   ')
+        : '1. Notice technique des modules photovoltaïques   2. Notice technique de l\u2019onduleur   3. Fiches techniques des dispositifs de protection   4. Schéma unifilaire de l\u2019installation';
+
     // ── THE REGISTRY ───────────────────────────────────────────────────
     // Keys MUST match the exact {{placeholder}} names in the Word template.
     const fields = {
@@ -177,12 +183,13 @@ export function buildFieldMap(dossierData, report) {
         reference: safe(reference),
         location: safe(address),
         power: fmt(peakKwc, 2) + ' kWc',
-        installer: safe(installer),
+        installer: INSTALLER_NAME,
+        sigle_installateur: 'Sigle installateur',
         date: dateStr,
         version: '1',
 
-        // ── Introduction ─────────────────────────────────────────────────
-        introduction: safe(clientName),
+        // ── Introduction (filled by AI generator when left empty) ────────
+        introduction: '',
 
         // ── Equipment table ──────────────────────────────────────────────
         module_qty: String(panelCount),
@@ -331,11 +338,28 @@ export function buildFieldMap(dossierData, report) {
         fuse_desc: safe(ms.note || ''),
 
         // ── Protection descriptions ──────────────────────────────────────
+        // (empty values are filled by the AI generator in French)
         isolatorDC_desc: safe(ds.message || ''),
         spdDC_desc: safe(spdDc.message || ''),
         rcdAC_desc: safe(ab.message || ''),
         spdAC_desc: safe(spdAc.message || ''),
         isolatorAC_desc: '',
+        earth_cable_desc: '',
+        structure_desc: '',
+
+        // ── Cable computation notes ──────────────────────────────────────
+        a_calculer: '(facteurs de correction selon mode de pose, température et groupement)',
+        troncons_consideres_calcul:
+            'Les tronçons considérés pour le calcul des chutes de tension sont : ' +
+            'DC1 R1 : panneaux photovoltaïques → onduleur ; AC R1 : onduleur → coffret AC ; AC R2 : coffret AC → TGBT.',
+        tableau_norme_indication:
+            'Courants admissibles des canalisations d\u2019après la norme NF C 15-100 (méthodes de référence).',
+        reference_type_fabricant_interrupteur:
+            `Référence : ${safe(acProtModel)} — Fabricant : ${safe(acProtBrand)} — Type : interrupteur-sectionneur AC`,
+
+        // ── Annexes documentation ────────────────────────────────────────
+        ordre_tableau_documentation_annexes: docsList,
+        ordre_tableau_I_documentation_annexes: docsList,
 
         // ── DC cable admissible / corrected ──────────────────────────────
         cableDC_admissible: safe(cdc.ib) + ' A',

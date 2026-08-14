@@ -18,12 +18,14 @@ import JSZip from 'jszip';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { buildFieldMap } from './stegDocxFieldMap.js';
+import { buildFieldMap, INSTALLER_NAME } from './stegDocxFieldMap.js';
 import { validateDocxBuffer } from './docxValidator.js';
+import { AI_TEXT_KEYS, generateAiTexts } from './aiTextGenerator.js';
+import { applyBranding } from './docxBranding.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = path.resolve(
-    __dirname, '..', 'assets', 'templates', 'steg-dossier-technique.docx',
+    __dirname, '..', 'assets', 'templates', 'template-safe-placeholders.docx',
 );
 
 // ── XML helpers ──────────────────────────────────────────────────────
@@ -35,6 +37,17 @@ function xmlEscape(v) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
+}
+
+/**
+ * Prepare a replacement value for insertion inside a <w:t> node.
+ * Line breaks (\n) become real Word line breaks (<w:br/>).
+ */
+function xmlValue(v) {
+    return String(v ?? '')
+        .split(/\r?\n/)
+        .map(xmlEscape)
+        .join('</w:t><w:br/><w:t xml:space="preserve">');
 }
 
 /**
@@ -119,7 +132,7 @@ function resolvePlaceholders(xmlText, fieldMap) {
     const edits = [];
 
     for (const rep of replacements) {
-        const value = xmlEscape(fieldMap[rep.key] ?? '');
+        const value = xmlValue(fieldMap[rep.key] ?? '');
 
         // Find segments overlapping [rep.cStart … rep.cEnd)
         const overlapping = segments.filter(
@@ -164,17 +177,41 @@ function resolvePlaceholders(xmlText, fieldMap) {
 // ── Main entry point ─────────────────────────────────────────────────
 
 /**
- * Generate a STEG technical dossier as a DOCX buffer.
+ * Generate a STEG technical dossier as a DOCX buffer from the official
+ * template (template-safe-placeholders.docx).
  *
- * @param {Object} dossierData      – full dossier document
+ * Merge order (last wins):
+ *   1. buildFieldMap() — computed dossier / compliance values
+ *   2. AI-generated French prose for empty narrative keys (Gemini)
+ *   3. dossier.variables — user overrides defined in the dossier UI
+ *
+ * @param {Object} dossierData      – full dossier document (may carry .variables)
  * @param {Object} complianceReport – output of computeStegCompliance()
- * @returns {Promise<Buffer>}
+ * @returns {Promise<{buffer: Buffer, generatedTexts: Record<string,string>}>}
  */
 export async function generateStegDOCX(dossierData, complianceReport) {
     const templateBytes = fs.readFileSync(TEMPLATE_PATH);
     const zip = await JSZip.loadAsync(templateBytes);
 
     const fieldMap = buildFieldMap(dossierData, complianceReport);
+
+    // User-defined variable overrides (dossier UI)
+    const userVars = dossierData?.variables && typeof dossierData.variables === 'object'
+        ? dossierData.variables
+        : {};
+
+    // AI-generate French prose for narrative keys still empty AND not overridden
+    const missingAiKeys = AI_TEXT_KEYS.filter(
+        (k) => !fieldMap[k] && !(k in userVars),
+    );
+    const generatedTexts = missingAiKeys.length > 0
+        ? await generateAiTexts(dossierData, complianceReport, missingAiKeys)
+        : {};
+
+    Object.assign(fieldMap, generatedTexts, userVars);
+
+    // The installer is always Supramax Energy — overrides never apply.
+    fieldMap.installer = INSTALLER_NAME;
 
     const usedKeys = new Set();
     const xmlFiles = xmlFileNames(zip);
@@ -196,6 +233,9 @@ export async function generateStegDOCX(dossierData, complianceReport) {
     if (unusedKeys.length > 0) {
         console.log('[DOCX] Fields in map but not found in template:', unusedKeys.join(', '));
     }
+
+    // Supramax Energy logo above "Sigle installateur" on every page
+    await applyBranding(zip);
 
     // Pack the ZIP
     const outBuffer = await zip.generateAsync({
@@ -221,5 +261,5 @@ export async function generateStegDOCX(dossierData, complianceReport) {
     console.log('[DOCX] Generation OK —', usedKeys.size, '/', allKeys.size, 'fields mapped,',
         validation.unresolvedPlaceholders.length, 'unresolved (blanked).');
 
-    return Buffer.from(outBuffer);
+    return { buffer: Buffer.from(outBuffer), generatedTexts };
 }

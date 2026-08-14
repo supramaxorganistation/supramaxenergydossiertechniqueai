@@ -22,6 +22,11 @@ import { scanDatasheet } from './services/aiScanner.js';
 import { computeStegCompliance } from './utils/stegCalculations.js';
 import { generateStegPDF } from './services/pdfGenerator.js';
 import { generateStegDOCX } from './services/docxTemplateFiller.js';
+import { convertDocxToPdfWithStaticToc, isLibreOfficeAvailable } from './services/docxToPdf.js';
+import { listTemplateVariables } from './services/templateVariables.js';
+import { findLogo } from './services/docxBranding.js';
+import { runAgent, ruleBasedGuidance } from './services/dossierAgent.js';
+import { generateAiTexts, AI_TEXT_KEYS } from './services/aiTextGenerator.js';
 import { erpRouter } from './erpRoutes.js';
 
 // Load config from the single root .env (monorepo root)
@@ -171,6 +176,9 @@ const dossierSchema = new mongoose.Schema({
     statusOk: { type: Boolean, default: true }
   },
   complianceReport: mongoose.Schema.Types.Mixed,
+  // User overrides for the DOCX template {{placeholders}} (dossier UI "Variables")
+  variables: { type: mongoose.Schema.Types.Mixed, default: {} },
+    chatHistory: { type: [mongoose.Schema.Types.Mixed], default: [] },
   status: { type: String, enum: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'REJECTED'], default: 'DRAFT' },
   documents: [
     {
@@ -818,7 +826,7 @@ app.get('/api/dossiers', authMiddleware, async (req, res) => {
 
 app.post('/api/dossiers', authMiddleware, authorizeRoles('admin', 'technician'), async (req, res) => {
   try {
-    const { customerDetails, pvSystemParams, equipment } = req.body;
+    const { customerDetails, pvSystemParams, equipment, variables } = req.body;
 
     if (!customerDetails || !pvSystemParams) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -830,12 +838,33 @@ app.post('/api/dossiers', authMiddleware, authorizeRoles('admin', 'technician'),
       customerDetails,
       pvSystemParams,
       equipment: equipment || {},
+      variables: variables || {},
       calculations,
       createdBy: req.user.id
     });
 
     const populated = await newDossier.populate('createdBy', 'name email');
     res.status(201).json(populated);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ── Installer logo (file variable in server/assets/) ──
+app.get('/api/branding/logo', authMiddleware, async (req, res) => {
+  try {
+    const logo = findLogo();
+    if (!logo) return res.status(404).json({ message: 'Logo introuvable dans server/assets/' });
+    res.sendFile(logo.path);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// ── Template variables catalogue (must be registered before :id routes) ──
+app.get('/api/dossiers/template-variables', authMiddleware, async (req, res) => {
+  try {
+    res.json(listTemplateVariables());
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -872,7 +901,7 @@ app.put('/api/dossiers/:id', authMiddleware, authorizeRoles('admin', 'technician
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const { customerDetails, pvSystemParams, status, assignedTechnician, equipment } = req.body;
+    const { customerDetails, pvSystemParams, status, assignedTechnician, equipment, variables } = req.body;
 
     if (customerDetails) dossier.customerDetails = customerDetails;
     if (pvSystemParams) {
@@ -880,6 +909,14 @@ app.put('/api/dossiers/:id', authMiddleware, authorizeRoles('admin', 'technician
       dossier.calculations = calculatePVMetrics(pvSystemParams);
     }
     if (equipment) dossier.equipment = equipment;
+    if (variables && typeof variables === 'object') {
+      // Sanitize: only string values, drop empties
+      const clean = {};
+      for (const [k, v] of Object.entries(variables)) {
+        if (typeof v === 'string' && v.trim() !== '') clean[k] = v;
+      }
+      dossier.variables = clean;
+    }
     if (status) dossier.status = status;
     if (assignedTechnician && req.user.role === 'admin') dossier.assignedTechnician = assignedTechnician;
     dossier.updatedAt = new Date();
@@ -1124,6 +1161,85 @@ app.delete('/api/equipment/:id', authMiddleware, authorizeRoles('admin', 'techni
   }
 });
 
+// ── AI TEXT GENERATION (French prose for template variables) ─────────
+app.post('/api/dossiers/:id/ai-texts', authMiddleware, async (req, res) => {
+  try {
+    const dossier = await Dossier.findById(req.params.id);
+    if (!dossier) {
+      return res.status(404).json({ message: 'Dossier not found' });
+    }
+    if (req.user.role === 'client' && dossier.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const complianceReport = computeStegCompliance(dossier);
+
+    // Only regenerate keys the user has not already customized
+    const userVars = dossier.variables || {};
+    const wanted = AI_TEXT_KEYS.filter((k) => !userVars[k]);
+    const texts = wanted.length > 0 ? await generateAiTexts(dossier, complianceReport, wanted) : {};
+
+    res.json({ texts });
+  } catch (error) {
+    console.error('AI text generation error:', error);
+    res.status(500).json({ message: 'Failed to generate AI texts', error: error.message });
+  }
+});
+
+// ── AI ASSISTANT AGENT (chatbot with database access) ────────────────
+app.post('/api/dossiers/:id/chat', authMiddleware, async (req, res) => {
+  try {
+    const dossier = await Dossier.findById(req.params.id);
+    if (!dossier) {
+      return res.status(404).json({ message: 'Dossier not found' });
+    }
+    if (req.user.role === 'client' && dossier.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const { message = '', images = [] } = req.body || {};
+    const safeImages = (Array.isArray(images) ? images : [])
+      .slice(0, 3)
+      .map((img) => ({
+        mimeType: String(img?.mimeType || 'image/png'),
+        base64: String(img?.base64 || '').replace(/^data:[^;]+;base64,/, ''),
+      }))
+      .filter((img) => img.base64.length > 0 && img.base64.length < 6000000);
+
+    if (!String(message).trim() && safeImages.length === 0) {
+      return res.status(400).json({ message: 'Message requis' });
+    }
+
+    let reply;
+    let actions = [];
+    let fallback = false;
+    try {
+      ({ reply, actions } = await runAgent({ dossier, message: String(message), images: safeImages }));
+    } catch (agentErr) {
+      if (agentErr.geminiAuth) {
+        fallback = true;
+        reply = ruleBasedGuidance(dossier);
+      } else {
+        console.error('Agent error:', agentErr);
+        return res.status(500).json({ message: 'Erreur agent : ' + agentErr.message });
+      }
+    }
+
+    const now = new Date().toISOString();
+    const history = [...(dossier.chatHistory || [])];
+    history.push({ role: 'user', text: String(message) || `[${safeImages.length} image(s) jointe(s)]`, images: safeImages.length, at: now });
+    history.push({ role: 'assistant', text: reply, actions, fallback, at: now });
+    dossier.chatHistory = history.slice(-100);
+    dossier.markModified('chatHistory');
+    await dossier.save();
+
+    res.json({ reply, actions, fallback, history: dossier.chatHistory });
+  } catch (error) {
+    console.error('Chat route error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.get('/api/dossiers/:id/export-pdf', authMiddleware, async (req, res) => {
   try {
     const dossier = await Dossier.findById(req.params.id)
@@ -1144,6 +1260,27 @@ app.get('/api/dossiers/:id/export-pdf', authMiddleware, async (req, res) => {
 
     // Save compliance report to dossier
     dossier.complianceReport = complianceReport;
+
+    // Preferred path: fill the official DOCX template, then convert to PDF
+    // (keeps styles, tables and the Table des matières page).
+    if (isLibreOfficeAvailable()) {
+      const { buffer: docxBuffer, generatedTexts } = await generateStegDOCX(dossier, complianceReport);
+
+      // Persist AI-generated texts so they are reusable / editable in the UI
+      if (Object.keys(generatedTexts).length > 0) {
+        dossier.variables = { ...(dossier.variables || {}), ...generatedTexts };
+      }
+      await dossier.save();
+
+      const pdfBuffer = await convertDocxToPdfWithStaticToc(docxBuffer);
+      const ref = dossier.customerDetails?.stegMeterRef || dossier._id;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Dossier_Technique_${ref}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      return res.send(pdfBuffer);
+    }
+
+    console.warn('[PDF] LibreOffice not available → legacy coordinate-based PDF generator');
     await dossier.save();
 
     // Generate PDF (annexes = documents téléversés du dossier)
@@ -1184,8 +1321,14 @@ app.get('/api/dossiers/:id/export-docx', authMiddleware, async (req, res) => {
     dossier.complianceReport = complianceReport;
     await dossier.save();
 
-    // Generate DOCX
-    const docxBuffer = await generateStegDOCX(dossier, complianceReport);
+    // Generate DOCX from the official template (variables + AI texts)
+    const { buffer: docxBuffer, generatedTexts } = await generateStegDOCX(dossier, complianceReport);
+
+    // Persist AI-generated texts so they are reusable / editable in the UI
+    if (Object.keys(generatedTexts).length > 0) {
+      dossier.variables = { ...(dossier.variables || {}), ...generatedTexts };
+      await dossier.save();
+    }
 
     // Determine filename
     const ref = dossier.customerDetails?.stegMeterRef || dossier._id;

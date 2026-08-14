@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 /**
  * Extract technical specifications from a PDF datasheet using Google Generative AI
@@ -38,24 +38,23 @@ export async function scanDatasheet(fileBuffer, fileName) {
     Return ONLY valid JSON, no additional text.`;
 
     // Use Gemini API with direct file input
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      generationConfig: {
+    const response = await genAI.models.generateContent({
+      model: 'gemini-flash-latest',
+      contents: [
+        {
+          inlineData: {
+            mimeType: 'application/pdf',
+            data: base64Data,
+          },
+        },
+        { text: extractionPrompt },
+      ],
+      config: {
         responseMimeType: 'application/json',
       },
     });
 
-    const response = await model.generateContent([
-      {
-        inlineData: {
-          mimeType: 'application/pdf',
-          data: base64Data,
-        },
-      },
-      extractionPrompt,
-    ]);
-
-    const result = response.response.text();
+    const result = response.text;
     
     // Parse and validate JSON response
     let parsedSpecs;
