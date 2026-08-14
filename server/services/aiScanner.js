@@ -1,9 +1,14 @@
-import 'dotenv/config';
 import { GoogleGenAI } from '@google/genai';
 import fs from 'fs';
 import path from 'path';
 
-const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Client created lazily: ES module imports run before server.js loads the
+// root .env, so GEMINI_API_KEY is not set yet at module load time.
+let genAI = null;
+function client() {
+  if (!genAI) genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  return genAI;
+}
 
 /**
  * Extract technical specifications from a PDF datasheet using Google Generative AI
@@ -38,7 +43,7 @@ export async function scanDatasheet(fileBuffer, fileName) {
     Return ONLY valid JSON, no additional text.`;
 
     // Use Gemini API with direct file input
-    const response = await genAI.models.generateContent({
+    const response = await client().models.generateContent({
       model: 'gemini-flash-latest',
       contents: [
         {
