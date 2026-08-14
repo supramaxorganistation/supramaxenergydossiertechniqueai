@@ -104,6 +104,8 @@ function App() {
   const handleLogin = (user: User) => {
     setCurrentUser(user);
     setScreen('dashboard');
+    // A stale #/reset-password/… hash must not resurface after logout
+    if (window.location.hash) window.location.hash = '';
     loadDossiers();
   };
 
@@ -113,6 +115,8 @@ function App() {
     setScreen('dashboard');
     setDossiers([]);
     setSelectedId(null);
+    // Always land on the login page, never on a leftover hash route
+    if (window.location.hash) window.location.hash = '';
   };
 
   const openDossier = (dossier: Dossier) => {

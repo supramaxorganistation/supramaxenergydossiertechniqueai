@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpQuote, ErpCustomer, ErpProduct, QuoteStatus, LineItem } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, nonNegative, atLeastOneItem } from '../useFormValidation';
 
 const STATUS_OPTS: { value: QuoteStatus; label: string; color: 'gray' | 'blue' | 'green' | 'amber' | 'red' }[] = [
@@ -89,7 +90,7 @@ export default function QuotesPage() {
               <div className="form-group"><label className="form-label">Currency</label><select className="select" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value })}><option value="TND">TND</option><option value="EUR">EUR</option><option value="USD">USD</option></select></div>
             </div>
             <div className="form-section-title">Line Items</div>
-            {errors.items && <div className="form-error-banner">⚠ {errors.items}</div>}
+            {errors.items && <div className="form-error-banner"><Icon name="alert-triangle" size={15} /> {errors.items}</div>}
             {form.items.map((item, idx) => (
               <div key={idx} className="flex gap-8 mb-16" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 2, marginBottom: 0 }}><label className="form-label">Product</label><select className="select" value={item.product as string} onChange={e => updateItem(idx, 'product', e.target.value)}><option value="">Select...</option>{products.map(p => <option key={p._id} value={p._id}>{p.name} ({p.sku || '—'})</option>)}</select></div>
@@ -108,7 +109,7 @@ export default function QuotesPage() {
       )}
 
       {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : quotes.length === 0 ? (
-        <EmptyState icon="📝" title="No quotes yet" subtitle="Create your first quote/estimation." />
+        <EmptyState icon="file-text" title="No quotes yet" subtitle="Create your first quote/estimation." />
       ) : (
         <div className="table-wrap"><table className="data"><thead><tr><th>Quote #</th><th>Customer</th><th>Date</th><th>Expiry</th><th>Total</th><th>Currency</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {quotes.map(q => (

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpAccount, ErpJournalEntry, AccountType, JournalLine } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, minLength } from '../useFormValidation';
 
 type Tab = 'accounts' | 'journal';
@@ -66,10 +67,10 @@ export default function AccountingPage() {
   return (
     <>
       <div className="grid grid-4 mb-16">
-        <div className="stat-card"><div className="stat-icon stat-blue">💰</div><div><div className="stat-value">{totalAssets.toFixed(0)}</div><div className="stat-label">Total Assets</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-red">📊</div><div><div className="stat-value">{totalLiabilities.toFixed(0)}</div><div className="stat-label">Liabilities</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-green">📈</div><div><div className="stat-value">{totalIncome.toFixed(0)}</div><div className="stat-label">Income</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-amber">📉</div><div><div className="stat-value">{totalExpenses.toFixed(0)}</div><div className="stat-label">Expenses</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-blue"><Icon name="wallet" size={22} /></div><div><div className="stat-value">{totalAssets.toFixed(0)}</div><div className="stat-label">Total Assets</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-red"><Icon name="bar-chart" size={22} /></div><div><div className="stat-value">{totalLiabilities.toFixed(0)}</div><div className="stat-label">Liabilities</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-green"><Icon name="trending-up" size={22} /></div><div><div className="stat-value">{totalIncome.toFixed(0)}</div><div className="stat-label">Income</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-amber"><Icon name="trending-down" size={22} /></div><div><div className="stat-value">{totalExpenses.toFixed(0)}</div><div className="stat-label">Expenses</div></div></div>
       </div>
 
       <div className="tabs">
@@ -105,7 +106,7 @@ export default function AccountingPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : accounts.length === 0 ? (
-            <EmptyState icon="📒" title="No accounts" subtitle="Seed default accounts or add manually." />
+            <EmptyState icon="wallet" title="No accounts" subtitle="Seed default accounts or add manually." />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>#</th><th>Name</th><th>Type</th><th>Balance</th><th>Active</th></tr></thead><tbody>
               {accounts.map(a => (
@@ -138,7 +139,7 @@ export default function AccountingPage() {
                   <div className="form-group"><label className="form-label">Status</label><select className="select" value={jeForm.status} onChange={e => setJeForm({ ...jeForm, status: e.target.value as any })}><option value="draft">Draft</option><option value="submitted">Submit</option></select></div>
                 </div>
                 <div className="form-section-title">Lines</div>
-                {jeError && <div className="form-error-banner">⚠ {jeError}</div>}
+                {jeError && <div className="form-error-banner"><Icon name="alert-triangle" size={15} /> {jeError}</div>}
                 {jeForm.lines.map((line, idx) => (
                   <div key={idx} className="flex gap-8 mb-16" style={{ alignItems: 'flex-end' }}>
                     <div className="form-group" style={{ flex: 3, marginBottom: 0 }}><label className="form-label">Account</label><select className="select" value={line.account as string} onChange={e => { const updated = [...jeForm.lines]; updated[idx].account = e.target.value; updated[idx].accountName = accounts.find(a => a._id === e.target.value)?.name || ''; setJeForm({ ...jeForm, lines: updated }); setJeError(null); }}><option value="">Select...</option>{accounts.map(a => <option key={a._id} value={a._id}>{a.accountNumber} - {a.name}</option>)}</select></div>
@@ -153,7 +154,7 @@ export default function AccountingPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : entries.length === 0 ? (
-            <EmptyState icon="📝" title="No journal entries" />
+            <EmptyState icon="file-text" title="No journal entries" />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>Entry #</th><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Status</th></tr></thead><tbody>
               {entries.map(e => (

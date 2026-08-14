@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpProduct, ProductCategory } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, minLength, nonNegative } from '../useFormValidation';
 
 const CATEGORIES: { value: ProductCategory; label: string }[] = [
@@ -57,10 +58,10 @@ export default function ProductsPage() {
   return (
     <>
       <div className="grid grid-4 mb-16">
-        <div className="stat-card"><div className="stat-icon stat-blue">📦</div><div><div className="stat-value">{products.length}</div><div className="stat-label">Total Products</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-green">✅</div><div><div className="stat-value">{products.filter(p => p.isActive).length}</div><div className="stat-label">Active</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-amber">⚠️</div><div><div className="stat-value">{lowStock.length}</div><div className="stat-label">Low Stock</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-red">📉</div><div><div className="stat-value">{products.reduce((s, p) => s + ((p.stockQty || 0) * (p.buyingPrice || 0)), 0).toFixed(0)}</div><div className="stat-label">Stock Value (TND)</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-blue"><Icon name="box" size={22} /></div><div><div className="stat-value">{products.length}</div><div className="stat-label">Total Products</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-green"><Icon name="check-circle" size={22} /></div><div><div className="stat-value">{products.filter(p => p.isActive).length}</div><div className="stat-label">Active</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-amber"><Icon name="alert-triangle" size={22} /></div><div><div className="stat-value">{lowStock.length}</div><div className="stat-label">Low Stock</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-red"><Icon name="trending-down" size={22} /></div><div><div className="stat-value">{products.reduce((s, p) => s + ((p.stockQty || 0) * (p.buyingPrice || 0)), 0).toFixed(0)}</div><div className="stat-label">Stock Value (TND)</div></div></div>
       </div>
 
       <div className="flex-between mb-16">
@@ -109,7 +110,7 @@ export default function ProductsPage() {
       )}
 
       {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : products.length === 0 ? (
-        <EmptyState icon="📦" title="No products yet" subtitle="Add your first product to the catalog." />
+        <EmptyState icon="box" title="No products yet" subtitle="Add your first product to the catalog." />
       ) : (
         <div className="table-wrap">
           <table className="data">

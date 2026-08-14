@@ -81,7 +81,7 @@ export default function DossiersPage({
       {filtered.length === 0 ? (
         <div className="card">
           <EmptyState
-            icon="🗂️"
+            icon="folder"
             title={search || statusFilter !== 'ALL' ? 'Aucun résultat' : 'Aucun dossier'}
             subtitle={
               search || statusFilter !== 'ALL'

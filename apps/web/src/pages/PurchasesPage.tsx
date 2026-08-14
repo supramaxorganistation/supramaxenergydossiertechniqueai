@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpPurchaseOrder, ErpSupplier, ErpProduct, PurchaseOrderStatus, LineItem } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, nonNegative, atLeastOneItem } from '../useFormValidation';
 
 const STATUS_OPTS: { value: PurchaseOrderStatus; label: string; color: 'gray' | 'blue' | 'green' | 'red' }[] = [
@@ -76,7 +77,7 @@ export default function PurchasesPage() {
               </div>
             </div>
             <div className="form-section-title">Line Items</div>
-            {errors.items && <div className="form-error-banner">⚠ {errors.items}</div>}
+            {errors.items && <div className="form-error-banner"><Icon name="alert-triangle" size={15} /> {errors.items}</div>}
             {form.items.map((item, idx) => (
               <div key={idx} className="flex gap-8 mb-16" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 2, marginBottom: 0 }}><label className="form-label">Product</label><select className="select" value={item.product as string} onChange={e => updateItem(idx, 'product', e.target.value)}><option value="">Select...</option>{products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}</select></div>
@@ -94,7 +95,7 @@ export default function PurchasesPage() {
       )}
 
       {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : orders.length === 0 ? (
-        <EmptyState icon="📋" title="No purchase orders" subtitle="Create your first purchase order." />
+        <EmptyState icon="clipboard" title="No purchase orders" subtitle="Create your first purchase order." />
       ) : (
         <div className="table-wrap"><table className="data"><thead><tr><th>PO #</th><th>Supplier</th><th>Date</th><th>Expected</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
           {orders.map(o => (

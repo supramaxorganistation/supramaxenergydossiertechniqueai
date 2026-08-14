@@ -76,7 +76,7 @@ export default function StockPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : warehouses.length === 0 ? (
-            <EmptyState icon="🏗️" title="No warehouses" subtitle="Add your first warehouse." />
+            <EmptyState icon="building" title="No warehouses" subtitle="Add your first warehouse." />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>Name</th><th>City</th><th>Address</th><th>Active</th><th>Actions</th></tr></thead><tbody>
               {warehouses.map(w => (
@@ -124,7 +124,7 @@ export default function StockPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : movements.length === 0 ? (
-            <EmptyState icon="📦" title="No stock movements" subtitle="Record your first stock movement." />
+            <EmptyState icon="box" title="No stock movements" subtitle="Record your first stock movement." />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>Date</th><th>Product</th><th>Warehouse</th><th>Type</th><th>Qty</th><th>Before</th><th>After</th><th>Reason</th></tr></thead><tbody>
               {movements.map(m => (

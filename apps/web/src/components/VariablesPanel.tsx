@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import type { Dossier, TemplateVariable } from '../types';
+import { Icon } from './Icon';
 
 /**
  * Variables du document — lets the user override any {{placeholder}} of the
  * DOCX template (template-safe-placeholders.docx). Values are merged over
  * the computed dossier values at DOCX/PDF generation time. Narrative keys
- * (✨) can be auto-generated in French by AI.
+ * (AI-marked) can be auto-generated in French by AI.
  */
 export default function VariablesPanel({
   dossier,
@@ -151,37 +152,41 @@ export default function VariablesPanel({
       <div className="card">
         <div className="vars-toolbar">
           <div>
-            <h4 className="card-title">📝 Variables du document</h4>
+            <h4 className="card-title">Variables du document</h4>
             <p className="card-subtitle">
               Remplacez n'importe quelle balise {'{{variable}}'} du modèle Word officiel.
-              Les champs ✨ peuvent être rédigés automatiquement en français par l'IA.
+              Les champs marqués d'une étoile peuvent être rédigés automatiquement en français par l'IA.
               {filledCount > 0 && <strong> {filledCount} variable(s) définie(s).</strong>}
             </p>
           </div>
           <div className="flex gap-8">
-            <input
-              className="vars-search"
-              placeholder="🔍 Rechercher une variable..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+            <div className="search-input">
+              <input
+                className="vars-search"
+                placeholder="Rechercher une variable..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
             <button
               className="btn btn-outline"
               onClick={handleAiGenerate}
               disabled={generating || !canManage}
               title="Génère en français les textes narratifs (introduction, descriptions…)"
             >
-              {generating ? '⏳ Génération...' : '✨ Générer les textes par IA'}
+              {generating
+                ? <><span className="spinner" /> Génération...</>
+                : <><Icon name="sparkle" size={15} /> Générer les textes par IA</>}
             </button>
             <button className="btn btn-primary" onClick={handleSave} disabled={saving || !dirty || !canManage}>
-              {saving ? 'Enregistrement...' : '💾 Enregistrer'}
+              {saving ? 'Enregistrement...' : <><Icon name="save" size={15} /> Enregistrer</>}
             </button>
           </div>
         </div>
         {notice && (
           <div className="msg-box info mt-12" style={{ display: 'flex', justifyContent: 'space-between' }}>
             <span>{notice}</span>
-            <button className="icon-btn" onClick={() => setNotice('')}>✕</button>
+            <button className="icon-btn" onClick={() => setNotice('')} aria-label="Fermer"><Icon name="x" size={13} /></button>
           </div>
         )}
       </div>
@@ -195,7 +200,7 @@ export default function VariablesPanel({
           )}
         </div>
         <div>
-          <h4 className="card-title">🖼️ Logo installateur</h4>
+          <h4 className="card-title">Logo installateur</h4>
           <p className="card-subtitle">
             Placé sur chaque page, au-dessus de « Sigle installateur ».
             Pour le changer, remplacez manuellement le fichier{' '}
@@ -214,7 +219,9 @@ export default function VariablesPanel({
               className="vars-group-head"
               onClick={() => setOpenGroups((prev) => ({ ...prev, [group]: !prev[group] }))}
             >
-              <span className="vars-chevron">{open ? '▾' : '▸'}</span>
+              <span className="vars-chevron">
+                <Icon name={open ? 'chevron-down' : 'chevron-right'} size={13} />
+              </span>
               <span style={{ fontWeight: 600 }}>{group}</span>
               <span className="vars-count">
                 {groupFilled > 0 ? `${groupFilled}/${vars.length} définies` : `${vars.length} variables`}
@@ -227,9 +234,9 @@ export default function VariablesPanel({
                   return (
                     <div className={`var-field ${v.long ? 'var-long' : ''}`} key={v.key}>
                       <label className="var-label">
-                        {v.ai && <span className="var-ai" title="Peut être généré par IA">✨ </span>}
+                        {v.ai && <span className="var-ai" title="Peut être généré par IA"><Icon name="sparkle" size={12} /></span>}
                         {v.label}
-                        {hasValue && <span className="var-dot" title="Définie">●</span>}
+                        {hasValue && <span className="var-dot" title="Définie" />}
                       </label>
                       {v.long ? (
                         <textarea

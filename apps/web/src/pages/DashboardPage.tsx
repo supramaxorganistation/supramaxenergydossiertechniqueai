@@ -66,16 +66,16 @@ export default function DashboardPage({
   return (
     <>
       <div className="grid grid-4 mb-16">
-        <StatCard icon="📁" value={dossiers.length} label="Total dossiers" color="blue" />
-        <StatCard icon="🔆" value={`${totalPower.toFixed(1)} kWc`} label="Puissance installée" color="amber" />
-        <StatCard icon="⏳" value={pending} label="En attente d'approbation" color="red" />
-        <StatCard icon="✅" value={approved} label="Approuvés" color="green" />
+        <StatCard icon="folder" value={dossiers.length} label="Total dossiers" color="blue" />
+        <StatCard icon="sun" value={`${totalPower.toFixed(1)} kWc`} label="Puissance installée" color="amber" />
+        <StatCard icon="clock" value={pending} label="En attente d'approbation" color="red" />
+        <StatCard icon="check-circle" value={approved} label="Approuvés" color="green" />
       </div>
 
       {dossiers.length === 0 ? (
         <div className="card">
           <EmptyState
-            icon="🗂️"
+            icon="folder"
             title="Aucun dossier pour le moment"
             subtitle="Créez votre premier dossier technique pour commencer."
           />
@@ -114,7 +114,7 @@ export default function DashboardPage({
             <h4 className="card-title">Production annuelle estimée (kWh)</h4>
             <p className="card-subtitle">Par mois de création des dossiers</p>
             {monthlyYield.length === 0 ? (
-              <EmptyState icon="📈" title="Pas encore de données" />
+              <EmptyState icon="trending-up" title="Pas encore de données" />
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyYield}>
@@ -131,7 +131,7 @@ export default function DashboardPage({
       )}
 
       <div className="card mt-16">
-        <h4 className="card-title">Bonjour, {userName} 👋</h4>
+        <h4 className="card-title">Bonjour, {userName}</h4>
         <p className="card-subtitle">
           Vous êtes connecté en tant que <strong>{roleLabel}</strong>.
           {role !== 'client'

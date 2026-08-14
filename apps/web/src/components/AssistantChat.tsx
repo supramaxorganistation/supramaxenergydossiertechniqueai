@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api';
 import type { ChatMessage, Dossier } from '../types';
+import { Icon } from './Icon';
 
 const QUICK_PROMPTS = [
   'Que manque-t-il pour un dossier parfait ?',
@@ -10,11 +11,11 @@ const QUICK_PROMPTS = [
 ];
 
 const ACTION_LABELS: Record<string, string> = {
-  update_dossier: '✏️ Dossier mis à jour',
-  attach_user_images: '🖼️ Images enregistrées',
-  generate_texts: '📝 Textes rédigés',
-  get_dossier: '👁️ Lecture du dossier',
-  get_compliance: '✅ Analyse conformité',
+  update_dossier: 'Dossier mis à jour',
+  attach_user_images: 'Images enregistrées',
+  generate_texts: 'Textes rédigés',
+  get_dossier: 'Lecture du dossier',
+  get_compliance: 'Analyse conformité',
 };
 
 function fileToBase64(file: File): Promise<{ mimeType: string; base64: string }> {
@@ -109,7 +110,7 @@ export default function AssistantChat({
     <div className="card chat-card">
       <div className="chat-header">
         <div>
-          <h4 className="card-title">🤖 Supramax Assistant</h4>
+          <h4 className="card-title">Supramax Assistant</h4>
           <p className="card-subtitle">
             Agent IA connecté au dossier : il lit, corrige et complète les données, vérifie la
             conformité STEG, rédige les textes et enregistre vos images.
@@ -120,7 +121,7 @@ export default function AssistantChat({
       <div className="chat-window" ref={scrollRef}>
         {messages.length === 0 && !isSending && (
           <div className="chat-empty">
-            <div style={{ fontSize: 34 }}>🤖</div>
+            <div className="chat-empty-icon"><Icon name="bot" size={38} strokeWidth={1.5} /></div>
             <p style={{ fontWeight: 600 }}>Bonjour, je suis votre assistant dossier.</p>
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>
               Demandez-moi d'analyser ce dossier, de corriger des valeurs, de rédiger les
@@ -141,12 +142,16 @@ export default function AssistantChat({
           <div key={idx} className={`chat-row ${m.role === 'user' ? 'chat-row-user' : ''}`}>
             <div className={`chat-bubble ${m.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-bot'}`}>
               {m.text && <div className="chat-text">{m.text}</div>}
-              {!m.text && m.images ? <div className="chat-text">🖼️ {m.images} image(s) jointe(s)</div> : null}
+              {!m.text && m.images ? (
+                <div className="chat-text">
+                  <span className="doc-link"><Icon name="image" size={14} /> {m.images} image(s) jointe(s)</span>
+                </div>
+              ) : null}
               {m.role === 'assistant' && m.actions && m.actions.length > 0 && (
                 <div className="chat-actions">
                   {m.actions.map((a, i) => (
                     <span key={i} className="chat-action-chip" title={a.note}>
-                      {ACTION_LABELS[a.tool] || `🔧 ${a.tool}`}
+                      {ACTION_LABELS[a.tool] || a.tool}
                       {a.note ? ` — ${a.note}` : ''}
                     </span>
                   ))}
@@ -179,7 +184,7 @@ export default function AssistantChat({
           {previews.map((url, idx) => (
             <div key={idx} className="chat-preview-item">
               <img src={url} alt={pendingFiles[idx]?.name} />
-              <button className="chat-preview-remove" onClick={() => removeFile(idx)}>✕</button>
+              <button className="chat-preview-remove" onClick={() => removeFile(idx)} aria-label="Retirer l'image"><Icon name="x" size={10} strokeWidth={2.5} /></button>
             </div>
           ))}
         </div>
@@ -187,7 +192,7 @@ export default function AssistantChat({
 
       <div className="chat-input-row">
         <label className="chat-attach-btn" title="Joindre des images (plaque signalétique, fiche technique…)">
-          📎
+          <Icon name="paperclip" size={16} />
           <input
             ref={fileInputRef}
             type="file"

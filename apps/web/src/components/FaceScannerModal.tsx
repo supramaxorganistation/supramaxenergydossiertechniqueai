@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Icon } from './Icon';
 
 // Models are served from the jsDelivr CDN (same weights used by face-api.js demos)
 const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model';
@@ -186,14 +187,14 @@ export default function FaceScannerModal({ mode, onClose, onCaptured, onVerify, 
     <div className="face-modal-overlay" onClick={() => !doneRef.current && onClose()}>
       <div className="face-modal" onClick={(e) => e.stopPropagation()}>
         <div className="face-modal-head">
-          <h3>{mode === 'login' ? '🔐 Connexion par Face ID' : '📸 Enregistrement du visage'}</h3>
-          <button className="face-modal-close" onClick={onClose} title="Fermer">✕</button>
+          <h3><Icon name={mode === 'login' ? 'face-scan' : 'camera'} size={17} /> {mode === 'login' ? 'Connexion par Face ID' : 'Enregistrement du visage'}</h3>
+          <button className="face-modal-close" onClick={onClose} title="Fermer"><Icon name="x" size={16} /></button>
         </div>
 
         <div className="face-video-wrap">
           <video ref={videoRef} className="face-video" muted playsInline />
           <div className={`face-frame ${frame}`} />
-          {status === 'error' && <div className="face-video-cover">⚠️</div>}
+          {status === 'error' && <div className="face-video-cover"><Icon name="alert-triangle" size={32} /></div>}
         </div>
 
         <div className="face-status">
@@ -203,7 +204,7 @@ export default function FaceScannerModal({ mode, onClose, onCaptured, onVerify, 
             <span>Placez votre visage face à la caméra, dans un endroit lumineux…</span>
           )}
           {status === 'scanning' && faceDetected && mode === 'register' && (
-            <span className="ok">Visage détecté ✓ — analyse ({samples}/{REGISTER_SAMPLES})…</span>
+            <span className="ok">Visage détecté — analyse ({samples}/{REGISTER_SAMPLES})…</span>
           )}
           {status === 'scanning' && faceDetected && mode === 'login' && frame === 'bad' && (
             <span className="bad">Visage non reconnu — ce compte n'est pas autorisé</span>
@@ -221,7 +222,7 @@ export default function FaceScannerModal({ mode, onClose, onCaptured, onVerify, 
           )}
           {status === 'matched' && (
             <span className="ok">
-              {mode === 'login' ? 'Visage reconnu ✓ — connexion…' : 'Visage analysé ✓'}
+              {mode === 'login' ? 'Visage reconnu — connexion…' : 'Visage analysé'}
             </span>
           )}
           {status === 'error' && <span className="err">{errorMsg}</span>}

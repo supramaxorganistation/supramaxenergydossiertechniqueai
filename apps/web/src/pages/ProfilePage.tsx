@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { api } from '../api';
 import type { User } from '../types';
 import { Badge } from '../components/ui';
+import { Icon } from '../components/Icon';
 import FaceScannerModal from '../components/FaceScannerModal';
 
 const ROLE_LABELS: Record<string, string> = {
@@ -48,7 +49,7 @@ export default function ProfilePage({
       <div className="profile-grid">
         {/* Account info */}
         <div className="card">
-          <h4 className="card-title">👤 Informations du compte</h4>
+          <h4 className="card-title"><Icon name="user" size={15} /> Informations du compte</h4>
           <div className="profile-head">
             <div className="profile-avatar">{initials}</div>
             <div>
@@ -78,14 +79,14 @@ export default function ProfilePage({
 
         {/* Face ID management */}
         <div className="card">
-          <h4 className="card-title">🔐 Face ID</h4>
+          <h4 className="card-title"><Icon name="face-scan" size={15} /> Face ID</h4>
           <p className="card-subtitle">
             Enregistrez votre visage pour vous connecter en un scan depuis la page de connexion.
           </p>
 
           <div className="profile-row" style={{ marginBottom: 14 }}>
             <span className="profile-key">Statut</span>
-            {hasFace ? <Badge color="green">✓ Visage enregistré</Badge> : <Badge color="gray">Non enregistré</Badge>}
+            {hasFace ? <Badge color="green"><Icon name="check" size={13} /> Visage enregistré</Badge> : <Badge color="gray">Non enregistré</Badge>}
           </div>
 
           {msg && <div className="msg-box info">{msg}</div>}
@@ -95,7 +96,7 @@ export default function ProfilePage({
             className="btn btn-primary"
             onClick={() => { setMsg(''); setError(''); setScannerOpen(true); }}
           >
-            {hasFace ? '🔄 Ré-enregistrer mon visage' : '🔐 Ajouter mon visage'}
+            {hasFace ? <><Icon name="refresh" size={15} /> Ré-enregistrer mon visage</> : <><Icon name="face-scan" size={15} /> Ajouter mon visage</>}
           </button>
         </div>
       </div>

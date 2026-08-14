@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Supramax — Social post 1080×1080</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --color-background: #F4F6F9;
+    --color-surface: #FFFFFF;
+    --color-sunken: #EDF1F5;
+    --color-border: #DBE3EA;
+    --color-foreground: #14212B;
+    --color-muted-foreground: #5A6B7B;
+    --color-primary: #10619C;
+    --color-primary-soft: #E8F1F8;
+    --color-accent: #EE8A17;
+    --color-accent-deep: #9A5B00;
+    --color-success: #2E8B47;
+    --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    background: var(--color-background);
+    font-family: var(--font-body);
+    color: var(--color-foreground);
+    overflow: hidden;
+    position: relative;
+    padding: 72px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Orbit-arc motif — top-right corner, off-canvas centre */
+  .orbit {
+    position: absolute;
+    top: -300px;
+    right: -300px;
+    width: 720px;
+    height: 720px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+  }
+  .orbit::after {
+    content: '';
+    position: absolute;
+    inset: 64px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+  }
+  .orbit .arc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 130deg, var(--color-accent) 0deg 50deg, transparent 50deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .brand .plate {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand .plate img { width: 36px; height: 36px; object-fit: contain; }
+  .brand .name {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .brand .name span { color: var(--color-primary); }
+
+  .mid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 30px;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 58px;
+    font-weight: 700;
+    line-height: 1.14;
+    letter-spacing: -0.015em;
+    max-width: 820px;
+  }
+  h1 em { font-style: normal; color: var(--color-primary); }
+
+  .sub {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--color-muted-foreground);
+    max-width: 720px;
+  }
+
+  /* Tinted containment: compliance strip as a flat bordered surface */
+  .strip {
+    display: flex;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .strip > div {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .strip > div + div { border-left: 1px solid var(--color-border); }
+  .strip strong {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+  .strip strong.ok { color: var(--color-success); }
+  .strip span { font-size: 13px; color: var(--color-muted-foreground); }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    height: 48px;
+    padding: 0 26px;
+    border-radius: 8px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .tag {
+    font-size: 13px;
+    color: var(--color-muted-foreground);
+  }
+</style>
+</head>
+<body>
+  <div class="orbit"><div class="arc"></div></div>
+
+  <div class="brand">
+    <div class="plate"><img src="../../apps/web/public/logo.png" alt="Supramax" /></div>
+    <div class="name">Supramax <span>Energy</span></div>
+  </div>
+
+  <div class="mid">
+    <div class="eyebrow">Plateforme dossiers STEG</div>
+    <h1>Le dossier technique,<br /><em>sans allers-retours</em>.</h1>
+    <p class="sub">Dimensionnement, conformité et documents finaux générés depuis une seule source de vérité.</p>
+    <div class="strip">
+      <div><strong class="ok">Conforme</strong><span>contrôles STEG validés</span></div>
+      <div><strong>0,93</strong><span>ratio onduleur/PV</span></div>
+      <div><strong>2 min</strong><span>par dossier généré</span></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="cta">Créer un dossier</div>
+    <div class="tag">supramax.energy</div>
+  </div>
+</body>
+</html>

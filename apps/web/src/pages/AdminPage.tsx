@@ -3,6 +3,7 @@ import { api } from '../api';
 import type { Role, User } from '../types';
 import { Badge, LoadingScreen, EmptyState } from '../components/ui';
 import FaceScannerModal from '../components/FaceScannerModal';
+import { Icon } from '../components/Icon';
 
 const ROLE_LABELS: Record<Role, string> = {
   admin: 'Administrateur',
@@ -120,7 +121,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
       {error && <div className="msg-box error mb-16">{error}</div>}
 
       <div className="card">
-        <h4 className="card-title">👥 Gestion des utilisateurs</h4>
+        <h4 className="card-title">Gestion des utilisateurs</h4>
         <p className="card-subtitle">
           Attribuez les rôles : <strong>admin</strong> (gestion complète),{' '}
           <strong>technician</strong> (création de dossiers) et <strong>client</strong> (consultation).
@@ -188,7 +189,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
         </form>
 
         {users.length === 0 ? (
-          <EmptyState icon="👥" title="Aucun utilisateur" />
+          <EmptyState icon="users" title="Aucun utilisateur" />
         ) : (
           <div className="table-wrap">
             <table className="data">
@@ -216,7 +217,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {user.hasFace ? (
                           <>
-                            <Badge color="green">✓ Enregistré</Badge>{' '}
+                            <Badge color="green"><Icon name="check" size={12} strokeWidth={2.5} /> Enregistré</Badge>{' '}
                             <button
                               className="btn btn-sm btn-ghost"
                               onClick={() => { setError(''); setFaceUser(user); }}
@@ -230,7 +231,7 @@ export default function AdminPage({ currentUser }: { currentUser: User }) {
                             className="btn btn-sm btn-outline"
                             onClick={() => { setError(''); setFaceUser(user); }}
                           >
-                            🔐 Ajouter le visage
+                            <Icon name="face-scan" size={15} /> Ajouter le visage
                           </button>
                         )}
                       </td>

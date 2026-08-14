@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpSetting } from '../erpTypes';
+import { Icon } from '../components/Icon';
 
 type SettingsForm = Record<string, Record<string, any>>;
 
 const CATEGORIES = [
-  { key: 'company', label: 'Company Info', icon: '🏢' },
-  { key: 'general', label: 'General', icon: '⚙️' },
-  { key: 'invoice', label: 'Invoice', icon: '📄' },
-  { key: 'quote', label: 'Quote', icon: '📝' },
+  { key: 'company', label: 'Company Info', icon: 'building' },
+  { key: 'general', label: 'General', icon: 'settings' },
+  { key: 'invoice', label: 'Invoice', icon: 'file-text' },
+  { key: 'quote', label: 'Quote', icon: 'pen' },
 ];
 
 export default function SettingsPage() {
@@ -71,7 +72,7 @@ export default function SettingsPage() {
   if (!seeded && settings.length === 0) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚙️</div>
+        <div className="settings-empty-icon"><Icon name="settings" size={44} strokeWidth={1.5} /></div>
         <h3>No settings configured yet</h3>
         <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Seed default settings to get started.</p>
         <button className="btn btn-primary" onClick={handleSeed}>Seed Default Settings</button>
@@ -88,7 +89,7 @@ export default function SettingsPage() {
             className={`tab ${activeTab === cat.key ? 'active' : ''}`}
             onClick={() => setActiveTab(cat.key)}
           >
-            {cat.icon} {cat.label}
+            <Icon name={cat.icon} size={14} /> {cat.label}
           </button>
         ))}
       </div>
@@ -97,7 +98,7 @@ export default function SettingsPage() {
         const items = categorySettings(cat.key);
         return (
           <div key={cat.key} className="card">
-            <h4 className="card-title">{cat.icon} {cat.label} Settings</h4>
+            <h4 className="card-title"><Icon name={cat.icon} size={15} /> {cat.label} Settings</h4>
             <div className="form-grid">
               {items.map(s => (
                 <div className="form-group" key={s.key}>

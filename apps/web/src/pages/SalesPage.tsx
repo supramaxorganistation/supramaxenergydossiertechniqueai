@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpSalesOrder, ErpInvoice, ErpCustomer, ErpProduct, SalesOrderStatus, InvoiceStatus, LineItem } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, nonNegative, atLeastOneItem } from '../useFormValidation';
 
 type Tab = 'orders' | 'invoices';
@@ -129,7 +130,7 @@ export default function SalesPage() {
               </div>
             </div>
             <div className="form-section-title">Line Items</div>
-            {soValidation.errors.items && <div className="form-error-banner">⚠ {soValidation.errors.items}</div>}
+            {soValidation.errors.items && <div className="form-error-banner"><Icon name="alert-triangle" size={15} /> {soValidation.errors.items}</div>}
             {soForm.items.map((item, idx) => (
               <div key={idx} className="flex gap-8 mb-16" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 2, marginBottom: 0 }}><label className="form-label">Product</label><select className="select" value={item.product as string} onChange={e => setSoForm({ ...soForm, items: updateLineItem(soForm.items, idx, 'product', e.target.value) })}><option value="">Select...</option>{products.map(p => <option key={p._id} value={p._id}>{p.name} ({p.sku || '—'})</option>)}</select></div>
@@ -170,7 +171,7 @@ export default function SalesPage() {
               </div>
             </div>
             <div className="form-section-title">Line Items</div>
-            {invValidation.errors.items && <div className="form-error-banner">⚠ {invValidation.errors.items}</div>}
+            {invValidation.errors.items && <div className="form-error-banner"><Icon name="alert-triangle" size={15} /> {invValidation.errors.items}</div>}
             {invForm.items.map((item, idx) => (
               <div key={idx} className="flex gap-8 mb-16" style={{ alignItems: 'flex-end' }}>
                 <div className="form-group" style={{ flex: 2, marginBottom: 0 }}><label className="form-label">Product</label><select className="select" value={item.product as string} onChange={e => setInvForm({ ...invForm, items: updateLineItem(invForm.items, idx, 'product', e.target.value) })}><option value="">Select...</option>{products.map(p => <option key={p._id} value={p._id}>{p.name}</option>)}</select></div>
@@ -187,7 +188,7 @@ export default function SalesPage() {
       )}
 
       {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : tab === 'orders' ? (
-        orders.length === 0 ? <EmptyState icon="🛒" title="No sales orders" /> : (
+        orders.length === 0 ? <EmptyState icon="cart" title="No sales orders" /> : (
           <div className="table-wrap"><table className="data"><thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Actions</th></tr></thead><tbody>
             {orders.map(o => (
               <tr key={o._id}>
@@ -206,7 +207,7 @@ export default function SalesPage() {
           </tbody></table></div>
         )
       ) : (
-        invoices.length === 0 ? <EmptyState icon="📄" title="No invoices" /> : (
+        invoices.length === 0 ? <EmptyState icon="file-text" title="No invoices" /> : (
           <div className="table-wrap"><table className="data"><thead><tr><th>Invoice #</th><th>Customer</th><th>Date</th><th>Total</th><th>Paid</th><th>Outstanding</th><th>Status</th></tr></thead><tbody>
             {invoices.map(inv => (
               <tr key={inv._id}>

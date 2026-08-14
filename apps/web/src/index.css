@@ -1,38 +1,58 @@
+/* ============================================================
+   Supramax Energy — base styles
+   Source of truth: assets/design-tokens.json
+   (primitive → semantic → component, generated via the
+   design-system skill). Nothing below invents raw values.
+   ============================================================ */
+@import '../../../assets/design-tokens.css';
+
 :root {
-  --bg: #f1f5f9;
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
+  /* ---- Legacy aliases → semantic tokens ----
+     Existing component styles keep their variable names;
+     remapping here restyles the whole app in one place. */
+  --bg: var(--color-background);
+  --bg-hover: var(--color-sunken);
+  --surface: var(--color-surface);
+  --surface-2: var(--color-sunken);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --text: var(--color-foreground);
+  --text-muted: var(--color-muted-foreground);
+  --text-faint: var(--color-faint);
 
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-soft: #eff6ff;
-  --success: #059669;
-  --success-soft: #ecfdf5;
-  --warning: #d97706;
-  --warning-soft: #fffbeb;
-  --danger: #dc2626;
-  --danger-soft: #fef2f2;
-  --info: #0891b2;
-  --info-soft: #ecfeff;
-  --sun: #f59e0b;
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --primary-active: var(--color-primary-active);
+  --primary-soft: var(--color-primary-soft);
+  --success: var(--color-success);
+  --success-deep: var(--color-success-deep);
+  --success-soft: var(--color-success-soft);
+  --warning: var(--color-accent-deep);
+  --warning-soft: var(--color-accent-soft);
+  --danger: var(--color-danger);
+  --danger-deep: var(--color-danger-deep);
+  --danger-soft: var(--color-danger-soft);
+  --info: var(--color-primary);
+  --info-soft: var(--color-primary-soft);
+  --sun: var(--color-accent);
 
-  --sidebar-bg: #0f172a;
-  --sidebar-text: #cbd5e1;
-  --sidebar-active: #2563eb;
+  --sidebar-bg: var(--color-sidebar);
+  --sidebar-text: var(--primitive-color-gray-300);
+  --sidebar-active: var(--color-primary);
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.12);
+  --radius: var(--primitive-radius-lg);
+  --radius-sm: var(--primitive-radius-md);
 
-  --sans: 'Inter', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --mono: ui-monospace, SFMono-Regular, Consolas, monospace;
+  /* Elevation policy: flat at rest; elevation only for floating layers
+     (menus, modals, popovers). Cards earn separation from borders + tints. */
+  --shadow-sm: none;
+  --shadow: var(--primitive-shadow-md);
+  --shadow-lg: var(--primitive-shadow-lg);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+
+  --display: var(--primitive-fontFamily-display);
+  --sans: var(--primitive-fontFamily-body);
+  --mono: var(--primitive-fontFamily-mono);
 
   color-scheme: light;
   font-synthesis: none;
@@ -60,6 +80,14 @@ body {
   background: var(--bg);
 }
 
+/* Typography carries hierarchy: display face for headings & key figures */
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  letter-spacing: -0.01em;
+}
+
 a {
   color: var(--primary);
   text-decoration: none;
@@ -67,4 +95,20 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+/* One consistent focus treatment everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--mono);
+}
+
+::selection {
+  background: var(--color-primary-soft);
 }

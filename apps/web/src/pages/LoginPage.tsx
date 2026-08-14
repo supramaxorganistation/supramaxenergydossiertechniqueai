@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { api, setToken } from '../api';
 import type { User } from '../types';
 import FaceScannerModal from '../components/FaceScannerModal';
+import { Icon } from '../components/Icon';
 
 type View = 'login' | 'register' | 'forgot';
 
@@ -267,7 +268,9 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
     <div className="login-page">
       <div className="login-hero">
         <div className="hero-logo">
-          <span className="logo-box">⚡</span>
+          <span className="logo-box">
+            <img src="/logo.png" alt="Supramax Energy" />
+          </span>
           <span>Supramax Energy</span>
         </div>
         <h1>Génération automatique des dossiers techniques photovoltaïques</h1>
@@ -276,9 +279,9 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           conformité STEG, analyse des datasheets par IA et export du dossier technique PDF.
         </p>
         <div className="hero-points">
-          <div className="hp"><span>✓</span> Conformité STEG en un clic (câbles, protections, vent, chaînes)</div>
-          <div className="hp"><span>✓</span> Extraction IA des caractéristiques équipements (Gemini)</div>
-          <div className="hp"><span>✓</span> Dossier technique PDF complet et prêt à soumettre</div>
+          <div className="hp"><span><Icon name="check" size={13} strokeWidth={2.5} /></span> Conformité STEG en un clic (câbles, protections, vent, chaînes)</div>
+          <div className="hp"><span><Icon name="check" size={13} strokeWidth={2.5} /></span> Extraction IA des caractéristiques équipements (Gemini)</div>
+          <div className="hp"><span><Icon name="check" size={13} strokeWidth={2.5} /></span> Dossier technique PDF complet et prêt à soumettre</div>
         </div>
       </div>
 
@@ -319,7 +322,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
                       onClick={() => { setPassword(generateStrongPassword()); setShowPw(true); }}
                       title="Générer un mot de passe fort"
                     >
-                      🔑 Suggérer un mot de passe
+                      <Icon name="key" size={12} /> Suggérer un mot de passe
                     </button>
                   )}
                 </div>
@@ -333,7 +336,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
                   />
                   {isRegister && password && (
                     <button type="button" className="pw-eye" onClick={() => setShowPw((s) => !s)} title={showPw ? 'Masquer' : 'Afficher'}>
-                      {showPw ? '🙈' : '👁'}
+                      <Icon name={showPw ? 'eye-off' : 'eye'} size={16} />
                     </button>
                   )}
                 </div>
@@ -370,7 +373,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
               disabled={loading}
               style={{ marginTop: 6 }}
             >
-              🔐 Se connecter avec Face ID
+              <Icon name="face-scan" size={16} /> Se connecter avec Face ID
             </button>
           )}
 
@@ -391,7 +394,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
             {isForgot ? (
               <span>
                 <a href="#" onClick={(e) => { e.preventDefault(); setView('login'); setError(''); setSuccess(''); }}>
-                  ← Retour à la connexion
+                  <Icon name="chevron-left" size={14} /> Retour à la connexion
                 </a>
               </span>
             ) : isRegister ? (
@@ -474,7 +477,9 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
     <div className="login-page">
       <div className="login-hero">
         <div className="hero-logo">
-          <span className="logo-box">⚡</span>
+          <span className="logo-box">
+            <img src="/logo.png" alt="Supramax Energy" />
+          </span>
           <span>Supramax Energy</span>
         </div>
         <h1>Réinitialisation du mot de passe</h1>
@@ -490,7 +495,7 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
               <div className="pw-label-row">
                 <label className="form-label">Nouveau mot de passe</label>
                 <button type="button" className="pw-suggest" onClick={suggestPassword} title="Générer un mot de passe fort">
-                  🔑 Suggérer un mot de passe
+                  <Icon name="key" size={12} /> Suggérer un mot de passe
                 </button>
               </div>
               <div className="pw-input-wrap">
@@ -503,7 +508,7 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
                 />
                 {newPassword && (
                   <button type="button" className="pw-eye" onClick={() => setShowPw((s) => !s)} title={showPw ? 'Masquer' : 'Afficher'}>
-                    {showPw ? '🙈' : '👁'}
+                    <Icon name={showPw ? 'eye-off' : 'eye'} size={16} />
                   </button>
                 )}
               </div>
@@ -524,13 +529,11 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
               {loading ? 'Réinitialisation...' : 'Réinitialiser le mot de passe'}
             </button>
           </form>
-          {success && (
-            <div className="login-links" style={{ marginTop: 16 }}>
-              <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; onDone(); }}>
-                ← Retour à la connexion
-              </a>
-            </div>
-          )}
+          <div className="login-links" style={{ marginTop: 16 }}>
+            <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; onDone(); }}>
+              <Icon name="chevron-left" size={14} /> Retour à la connexion
+            </a>
+          </div>
         </div>
       </div>
     </div>

@@ -115,7 +115,7 @@ export default function CustomersPage() {
       )}
 
       {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : items.length === 0 ? (
-        <EmptyState icon={tab === 'customers' ? '👥' : '🏭'} title={`No ${tab} yet`} subtitle="Add your first record to get started." />
+        <EmptyState icon={tab === 'customers' ? 'users' : 'building'} title={`No ${tab} yet`} subtitle="Add your first record to get started." />
       ) : (
         <div className="table-wrap">
           <table className="data">

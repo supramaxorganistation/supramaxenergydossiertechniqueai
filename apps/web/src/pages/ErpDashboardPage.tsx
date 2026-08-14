@@ -13,27 +13,27 @@ export default function ErpDashboardPage({ onNavigate }: { onNavigate: (s: Scree
   }, []);
 
   if (loading) return <div className="loading-screen"><span className="spinner" /> Loading ERP data...</div>;
-  if (!stats) return <EmptyState icon="📊" title="Could not load ERP data" />;
+  if (!stats) return <EmptyState icon="dashboard" title="Could not load ERP data" />;
 
   return (
     <>
       <div className="grid grid-4 mb-16">
-        <StatCard icon="👥" value={stats.customerCount} label="Customers" color="blue" />
-        <StatCard icon="📦" value={stats.productCount} label="Products" color="green" />
-        <StatCard icon="📝" value={stats.quoteCount} label="Quotes" color="amber" />
-        <StatCard icon="🛒" value={stats.salesOrderCount} label="Sales Orders" color="blue" />
+        <StatCard icon="users" value={stats.customerCount} label="Customers" color="blue" />
+        <StatCard icon="box" value={stats.productCount} label="Products" color="green" />
+        <StatCard icon="file-text" value={stats.quoteCount} label="Quotes" color="amber" />
+        <StatCard icon="cart" value={stats.salesOrderCount} label="Sales Orders" color="blue" />
       </div>
 
       <div className="grid grid-4 mb-16">
-        <StatCard icon="📋" value={stats.purchaseOrderCount} label="Purchase Orders" color="red" />
-        <StatCard icon="🏭" value={stats.supplierCount} label="Suppliers" color="blue" />
-        <StatCard icon="📄" value={stats.invoiceCount} label="Invoices" color="green" />
-        <StatCard icon="👤" value={stats.employeeCount} label="Employees" color="amber" />
+        <StatCard icon="clipboard" value={stats.purchaseOrderCount} label="Purchase Orders" color="red" />
+        <StatCard icon="building" value={stats.supplierCount} label="Suppliers" color="blue" />
+        <StatCard icon="file-text" value={stats.invoiceCount} label="Invoices" color="green" />
+        <StatCard icon="user" value={stats.employeeCount} label="Employees" color="amber" />
       </div>
 
       <div className="grid grid-4 mb-16">
-        <StatCard icon="⚠️" value={stats.lowStockProducts} label="Low Stock Items" color="red" />
-        <StatCard icon="🚨" value={stats.overdueInvoices} label="Overdue Invoices" color="red" />
+        <StatCard icon="alert-triangle" value={stats.lowStockProducts} label="Low Stock Items" color="red" />
+        <StatCard icon="clock" value={stats.overdueInvoices} label="Overdue Invoices" color="red" />
       </div>
 
       <div className="grid grid-2 mb-16">

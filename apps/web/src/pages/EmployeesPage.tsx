@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { erpApi } from '../erpApi';
 import type { ErpEmployee, ErpAttendance, EmployeeDepartment, EmployeeStatus, AttendanceStatus } from '../erpTypes';
 import { Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 import { useFormValidation, required, minLength, email, phone, nonNegative } from '../useFormValidation';
 
 type Tab = 'employees' | 'attendance';
@@ -74,10 +75,10 @@ export default function EmployeesPage() {
   return (
     <>
       <div className="grid grid-4 mb-16">
-        <div className="stat-card"><div className="stat-icon stat-blue">👥</div><div><div className="stat-value">{employees.length}</div><div className="stat-label">Total Employees</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-green">✅</div><div><div className="stat-value">{activeCount}</div><div className="stat-label">Active</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-amber">💵</div><div><div className="stat-value">{totalSalary.toFixed(0)}</div><div className="stat-label">Monthly Payroll</div></div></div>
-        <div className="stat-card"><div className="stat-icon stat-red">📅</div><div><div className="stat-value">{attendance.length}</div><div className="stat-label">Attendance Records</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-blue"><Icon name="users" size={22} /></div><div><div className="stat-value">{employees.length}</div><div className="stat-label">Total Employees</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-green"><Icon name="check-circle" size={22} /></div><div><div className="stat-value">{activeCount}</div><div className="stat-label">Active</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-amber"><Icon name="banknote" size={22} /></div><div><div className="stat-value">{totalSalary.toFixed(0)}</div><div className="stat-label">Monthly Payroll</div></div></div>
+        <div className="stat-card"><div className="stat-icon stat-red"><Icon name="calendar" size={22} /></div><div><div className="stat-value">{attendance.length}</div><div className="stat-label">Attendance Records</div></div></div>
       </div>
 
       <div className="tabs">
@@ -131,7 +132,7 @@ export default function EmployeesPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : employees.length === 0 ? (
-            <EmptyState icon="👤" title="No employees" subtitle="Add your first employee." />
+            <EmptyState icon="user" title="No employees" subtitle="Add your first employee." />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Salary</th><th>Status</th><th>Actions</th></tr></thead><tbody>
               {employees.map(emp => (
@@ -181,7 +182,7 @@ export default function EmployeesPage() {
             </div>
           )}
           {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : attendance.length === 0 ? (
-            <EmptyState icon="📅" title="No attendance records" subtitle="Record your first attendance." />
+            <EmptyState icon="calendar" title="No attendance records" subtitle="Record your first attendance." />
           ) : (
             <div className="table-wrap"><table className="data"><thead><tr><th>Date</th><th>Employee</th><th>Check In</th><th>Check Out</th><th>Status</th><th>Notes</th></tr></thead><tbody>
               {attendance.map(a => (

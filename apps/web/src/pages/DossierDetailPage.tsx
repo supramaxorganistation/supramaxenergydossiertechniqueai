@@ -5,6 +5,7 @@ import CompliancePanel from '../components/CompliancePanel';
 import VariablesPanel from '../components/VariablesPanel';
 import AssistantChat from '../components/AssistantChat';
 import { StatusBadge, Badge, EmptyState } from '../components/ui';
+import { Icon } from '../components/Icon';
 
 type Tab = 'overview' | 'compliance' | 'assistant' | 'equipment' | 'variables' | 'export';
 
@@ -131,7 +132,7 @@ export default function DossierDetailPage({
     <>
       <div className="flex-between mb-16">
         <div className="flex-center">
-          <button className="btn btn-ghost btn-sm" onClick={onBack}>← Retour</button>
+          <button className="btn btn-ghost btn-sm" onClick={onBack}><Icon name="chevron-left" size={15} /> Retour</button>
           <div style={{ marginLeft: 12 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700 }}>{dossier.customerDetails.name}</h2>
             <div className="flex-center mt-12" style={{ marginTop: 4 }}>
@@ -144,33 +145,35 @@ export default function DossierDetailPage({
 
       <div className="tabs">
         <button className={`tab ${tab === 'overview' ? 'active' : ''}`} onClick={() => setTab('overview')}>
-          📋 Vue d'ensemble
+          Vue d'ensemble
         </button>
         <button className={`tab ${tab === 'compliance' ? 'active' : ''}`} onClick={() => setTab('compliance')}>
-          ✅ Conformité STEG
-          {compliance && !complianceOk && complianceError > 0 && <span style={{ marginLeft: 6 }}>❌</span>}
+          Conformité STEG
+          {compliance && !complianceOk && complianceError > 0 && (
+            <span className="tab-alert"><Icon name="x-circle" size={14} /></span>
+          )}
         </button>
         <button className={`tab ${tab === 'assistant' ? 'active' : ''}`} onClick={() => setTab('assistant')}>
-          🤖 Assistant IA
+          Assistant IA
         </button>
         <button className={`tab ${tab === 'equipment' ? 'active' : ''}`} onClick={() => setTab('equipment')}>
-          🤖 Équipements & documents
+          Équipements & documents
         </button>
         <button className={`tab ${tab === 'variables' ? 'active' : ''}`} onClick={() => setTab('variables')}>
-          📝 Variables
+          Variables
           {dossier.variables && Object.keys(dossier.variables).length > 0 && (
-            <span style={{ marginLeft: 6 }}>●</span>
+            <span className="tab-dot" />
           )}
         </button>
         <button className={`tab ${tab === 'export' ? 'active' : ''}`} onClick={() => setTab('export')}>
-          📄 Export
+          Export
         </button>
       </div>
 
       {notice && (
         <div className="msg-box info mb-16" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span>{notice}</span>
-          <button className="icon-btn" onClick={() => setNotice('')}>✕</button>
+          <button className="icon-btn" onClick={() => setNotice('')} aria-label="Fermer"><Icon name="x" size={13} /></button>
         </div>
       )}
 
@@ -178,7 +181,7 @@ export default function DossierDetailPage({
         <>
           <div className="grid grid-2">
             <div className="card">
-              <h4 className="card-title">👤 Informations client</h4>
+              <h4 className="card-title">Informations client</h4>
               <div className="kv">
                 {kv('Nom complet', dossier.customerDetails.name)}
                 {kv('CIN', dossier.customerDetails.cin)}
@@ -196,7 +199,7 @@ export default function DossierDetailPage({
             </div>
 
             <div className="card">
-              <h4 className="card-title">🔆 Système PV</h4>
+              <h4 className="card-title">Système PV</h4>
               <div className="kv">
                 {kv('Puissance crête', `${p.peakPowerKwc} kWc`)}
                 {kv('Panneaux', `${p.panelCount} × ${p.panelBrand}`)}
@@ -211,17 +214,20 @@ export default function DossierDetailPage({
 
           <div className="grid grid-2">
             <div className="card">
-              <h4 className="card-title">🧮 Calculs</h4>
+              <h4 className="card-title">Calculs</h4>
               <div className="kv">
                 {kv('Production annuelle estimée', `${(dossier.calculations?.estimatedAnnualYieldKwh || 0).toLocaleString('fr-FR')} kWh`)}
                 {kv('Chute de tension DC', `${(dossier.calculations?.dcVoltageDropPercent || 0).toFixed(2)} %`)}
                 {kv('Chute de tension AC', `${(dossier.calculations?.acVoltageDropPercent || 0).toFixed(2)} %`)}
-                {kv('Statut', dossier.calculations?.statusOk ? '✅ OK' : '❌ À corriger')}
+                {kv('Statut', dossier.calculations?.statusOk
+                  ? <span className="kv-status ok"><Icon name="check-circle" size={14} /> OK</span>
+                  : <span className="kv-status bad"><Icon name="x-circle" size={14} /> À corriger</span>
+                )}
               </div>
             </div>
 
             <div className="card">
-              <h4 className="card-title">🏗️ Structure & site</h4>
+              <h4 className="card-title">Structure & site</h4>
               <div className="kv">
                 {kv('Surface panneau', p.panelAreaM2 ? `${p.panelAreaM2} m²` : '—')}
                 {kv('Poids panneau', p.panelWeightKg ? `${p.panelWeightKg} kg` : '—')}
@@ -236,7 +242,7 @@ export default function DossierDetailPage({
 
       {tab === 'compliance' && (
         <div className="card">
-          <h4 className="card-title">✅ Rapport de Conformité STEG</h4>
+          <h4 className="card-title">Rapport de Conformité STEG</h4>
           <p className="card-subtitle">
             Vérification complète des critères STEG : chaînes, ratio de puissance, protections,
             câbles (NF C 15-100) et tenue au vent.
@@ -249,7 +255,7 @@ export default function DossierDetailPage({
           ) : compliance ? (
             <CompliancePanel report={compliance} />
           ) : (
-            <EmptyState icon="✅" title="Rapport indisponible" subtitle="Les données du dossier sont insuffisantes pour le calcul." />
+            <EmptyState icon="clipboard" title="Rapport indisponible" subtitle="Les données du dossier sont insuffisantes pour le calcul." />
           )}
         </div>
       )}
@@ -261,7 +267,7 @@ export default function DossierDetailPage({
       {tab === 'equipment' && (
         <>
           <div className="card">
-            <h4 className="card-title">📦 Équipements</h4>
+            <h4 className="card-title">Équipements</h4>
             <p className="card-subtitle">
               Caractéristiques extraites par l'IA à partir des fiches techniques (datasheets).
             </p>
@@ -297,7 +303,7 @@ export default function DossierDetailPage({
               </div>
             ) : (
               <EmptyState
-                icon="📦"
+                icon="box"
                 title="Aucun équipement renseigné"
                 subtitle="Utilisez le scanner IA ci-dessous pour extraire les caractéristiques des datasheets."
               />
@@ -306,14 +312,16 @@ export default function DossierDetailPage({
 
           {canManage && (
             <div className="card">
-              <h4 className="card-title">🤖 Scanner IA de datasheet</h4>
+              <h4 className="card-title">Scanner IA de datasheet</h4>
               <p className="card-subtitle">
                 Uploadez une fiche technique PDF (panneau, onduleur, protection, câble) pour
                 extraire automatiquement les spécifications techniques.
               </p>
               <div className="flex gap-8">
                 <label className="file-drop" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                  {datasheetFile ? '📄 ' + datasheetFile.name : '📤 Choisir une fiche technique PDF'}
+                  {datasheetFile
+                    ? <><Icon name="file-text" size={15} /> {datasheetFile.name}</>
+                    : <><Icon name="upload" size={15} /> Choisir une fiche technique PDF</>}
                   <input
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg"
@@ -336,7 +344,7 @@ export default function DossierDetailPage({
           )}
 
           <div className="card">
-            <h4 className="card-title">📎 Documents</h4>
+            <h4 className="card-title">Documents</h4>
             {dossier.documents?.length ? (
               <ul style={{ listStyle: 'none' }}>
                 {dossier.documents.map((doc, idx) => (
@@ -351,8 +359,8 @@ export default function DossierDetailPage({
                       fontSize: 13.5,
                     }}
                   >
-                    <a href={fileUrl(doc.fileUrl)} target="_blank" rel="noreferrer">
-                      📄 {doc.fileName}
+                    <a className="doc-link" href={fileUrl(doc.fileUrl)} target="_blank" rel="noreferrer">
+                      <Icon name="file-text" size={14} /> {doc.fileName}
                     </a>
                     <span style={{ color: 'var(--text-faint)', fontSize: 12 }}>
                       {new Date(doc.uploadedAt).toLocaleDateString('fr-FR')}
@@ -361,7 +369,7 @@ export default function DossierDetailPage({
                 ))}
               </ul>
             ) : (
-              <EmptyState icon="📎" title="Aucun document" subtitle="Téléversez les pièces du dossier (factures, plans, fiches...)." />
+              <EmptyState icon="paperclip" title="Aucun document" subtitle="Téléversez les pièces du dossier (factures, plans, fiches...)." />
             )}
 
             {canManage && (
@@ -387,12 +395,12 @@ export default function DossierDetailPage({
 
       {tab === 'export' && (
         <div className="card">
-          <h4 className="card-title">📄 Génération du dossier technique STEG</h4>
+          <h4 className="card-title">Génération du dossier technique STEG</h4>
           <p className="card-subtitle">
             Génère le dossier technique à partir du modèle Word officiel (template-safe-placeholders) :
             page de garde, Table des matières automatique, notes de calcul STEG, protections DC/AC,
             câbles (NF C 15-100). Les textes narratifs sont rédigés en français par l'IA et vos
-            variables (onglet 📝) remplacent les balises du modèle.
+            variables (onglet Variables) remplacent les balises du modèle.
           </p>
           <button
             className="btn btn-success"
@@ -400,7 +408,9 @@ export default function DossierDetailPage({
             onClick={handleGeneratePdf}
             disabled={isGeneratingPdf}
           >
-            {isGeneratingPdf ? '⏳ Génération du PDF en cours...' : '📥 Télécharger le dossier technique PDF'}
+            {isGeneratingPdf
+              ? <><span className="spinner" /> Génération du PDF en cours...</>
+              : <><Icon name="download" size={16} /> Télécharger le dossier technique PDF</>}
           </button>
           <button
             className="btn btn-primary"
@@ -408,7 +418,9 @@ export default function DossierDetailPage({
             onClick={handleGenerateDocx}
             disabled={isGeneratingDocx}
           >
-            {isGeneratingDocx ? '⏳ Génération du DOCX en cours...' : '📥 Télécharger le dossier technique DOCX'}
+            {isGeneratingDocx
+              ? <><span className="spinner" /> Génération du DOCX en cours...</>
+              : <><Icon name="download" size={16} /> Télécharger le dossier technique DOCX</>}
           </button>
         </div>
       )}

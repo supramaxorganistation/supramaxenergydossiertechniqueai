@@ -1,4 +1,5 @@
 import type { DossierStatus } from '../types';
+import { Icon } from './Icon';
 
 const STATUS_META: Record<DossierStatus, { label: string; className: string }> = {
   DRAFT: { label: 'Brouillon', className: 'badge-gray' },
@@ -40,7 +41,9 @@ export function StatCard({
 }) {
   return (
     <div className="stat-card">
-      <div className={`stat-icon stat-${color}`}>{icon}</div>
+      <div className={`stat-icon stat-${color}`}>
+        <Icon name={icon} size={22} />
+      </div>
       <div>
         <div className="stat-value">{value}</div>
         <div className="stat-label">{label}</div>
@@ -50,7 +53,7 @@ export function StatCard({
 }
 
 export function EmptyState({
-  icon = '📭',
+  icon = 'inbox',
   title,
   subtitle,
 }: {
@@ -60,7 +63,9 @@ export function EmptyState({
 }) {
   return (
     <div className="empty-state">
-      <div className="empty-icon">{icon}</div>
+      <div className="empty-icon">
+        <Icon name={icon} size={40} strokeWidth={1.5} />
+      </div>
       <h3>{title}</h3>
       {subtitle && <p>{subtitle}</p>}
     </div>

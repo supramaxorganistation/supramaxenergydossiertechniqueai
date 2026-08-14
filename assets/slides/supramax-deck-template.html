@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Supramax Energy — Deck template</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../design-tokens.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+  body {
+    font-family: var(--primitive-fontFamily-body);
+    background: var(--color-background);
+    color: var(--color-foreground);
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8vh 10vw;
+    gap: 24px;
+  }
+  .slide.active { display: flex; }
+
+  /* Dark slides (cover, CTA) use the sidebar ink surface */
+  .slide.dark {
+    background: var(--color-sidebar);
+    color: var(--color-surface);
+  }
+
+  /* Orbit-arc motif, reused from the product UI */
+  .orbit {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+    pointer-events: none;
+  }
+  .orbit .arc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 150deg, var(--color-accent) 0deg 52deg, transparent 52deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  }
+
+  .eyebrow {
+    font-size: var(--primitive-fontSize-micro);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+  }
+  .slide.dark .eyebrow { color: var(--color-accent); }
+
+  h1 {
+    font-family: var(--primitive-fontFamily-display);
+    font-size: clamp(40px, 5.2vw, 68px);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    max-width: 20ch;
+  }
+  h1 em { font-style: normal; color: var(--color-primary); }
+  .slide.dark h1 em { color: var(--color-accent); }
+
+  h2 {
+    font-family: var(--primitive-fontFamily-display);
+    font-size: clamp(28px, 3.2vw, 42px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    font-size: var(--primitive-fontSize-lg);
+    line-height: 1.55;
+    color: var(--color-muted-foreground);
+    max-width: 60ch;
+  }
+  .slide.dark .sub { color: color-mix(in srgb, var(--color-surface) 72%, transparent); }
+
+  .logo-plate {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--primitive-radius-lg);
+    background: var(--color-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-plate img { width: 46px; height: 46px; object-fit: contain; }
+
+  /* Tinted containment: flat bordered stat cards, no shadows */
+  .stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .stat {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--primitive-radius-lg);
+    padding: 20px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 180px;
+  }
+  .stat strong {
+    font-family: var(--primitive-fontFamily-display);
+    font-size: var(--primitive-fontSize-2xl);
+    font-weight: 700;
+    color: var(--color-primary);
+  }
+  .stat strong.ok { color: var(--color-success); }
+  .stat span { font-size: var(--primitive-fontSize-sm); color: var(--color-muted-foreground); }
+
+  .chart-wrap {
+    width: min(880px, 80vw);
+    height: 46vh;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--primitive-radius-lg);
+    padding: 24px;
+  }
+
+  .mono { font-family: var(--primitive-fontFamily-mono); }
+
+  /* Progress bar + counter */
+  .progress {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--color-primary);
+    transition: width 0.25s ease;
+  }
+  .counter {
+    position: fixed;
+    right: 24px;
+    bottom: 16px;
+    font-family: var(--primitive-fontFamily-mono);
+    font-size: var(--primitive-fontSize-micro);
+    color: var(--color-muted-foreground);
+  }
+  .slide.dark ~ .counter { color: color-mix(in srgb, var(--color-surface) 55%, transparent); }
+
+  .hint {
+    font-size: var(--primitive-fontSize-sm);
+    color: var(--color-muted-foreground);
+  }
+</style>
+</head>
+<body>
+
+  <!-- 1 · Cover -->
+  <section class="slide dark active">
+    <div class="orbit" style="width: 640px; height: 640px; top: -260px; right: -260px;"><div class="arc"></div></div>
+    <div class="logo-plate"><img src="../../apps/web/public/logo.png" alt="Supramax" /></div>
+    <div class="eyebrow">Supramax Energy</div>
+    <h1>Des dossiers STEG <em>conformes</em>, générés en minutes.</h1>
+    <p class="sub">Plateforme de dimensionnement et de conformité photovoltaïque — présentation interne.</p>
+    <p class="hint">Flèches ← → pour naviguer</p>
+  </section>
+
+  <!-- 2 · Problem -->
+  <section class="slide">
+    <div class="orbit" style="width: 520px; height: 520px; bottom: -220px; left: -220px;"><div class="arc"></div></div>
+    <div class="eyebrow">Le constat</div>
+    <h2>Chaque dossier ressaisi est une erreur potentielle.</h2>
+    <p class="sub">Dimensionnement, contrôles NF C 15-100 et mise en forme : trois outils, trois sources de divergence, des allers-retours STEG qui retardent le raccordement.</p>
+    <div class="stats">
+      <div class="stat"><strong>3</strong><span>outils par dossier</span></div>
+      <div class="stat"><strong>48 h</strong><span>d'attente en moyenne</span></div>
+      <div class="stat"><strong>12 %</strong><span>de dossiers rejetés</span></div>
+    </div>
+  </section>
+
+  <!-- 3 · Data (Chart.js) -->
+  <section class="slide">
+    <div class="eyebrow">Résultats mesurés</div>
+    <h2>Temps de préparation par dossier</h2>
+    <div class="chart-wrap"><canvas id="timeChart"></canvas></div>
+  </section>
+
+  <!-- 4 · Product -->
+  <section class="slide">
+    <div class="orbit" style="width: 520px; height: 520px; top: -220px; right: -220px;"><div class="arc"></div></div>
+    <div class="eyebrow">La plateforme</div>
+    <h2>Une seule source de vérité.</h2>
+    <p class="sub">Le dossier est calculé, vérifié et exporté depuis les mêmes données : ratio onduleur/PV, sections de câbles, protections — contrôlés à chaque modification.</p>
+    <div class="stats">
+      <div class="stat"><strong class="ok">Conforme</strong><span>contrôles STEG validés</span></div>
+      <div class="stat"><strong>0,93</strong><span>ratio onduleur/PV visé</span></div>
+      <div class="stat"><strong>1</strong><span>export PDF prêt à soumettre</span></div>
+    </div>
+  </section>
+
+  <!-- 5 · Metrics -->
+  <section class="slide">
+    <div class="eyebrow">Adoption</div>
+    <h2>Dossiers générés par mois</h2>
+    <div class="chart-wrap"><canvas id="volumeChart"></canvas></div>
+  </section>
+
+  <!-- 6 · CTA -->
+  <section class="slide dark">
+    <div class="orbit" style="width: 640px; height: 640px; bottom: -260px; left: -260px;"><div class="arc"></div></div>
+    <div class="eyebrow">Prochaine étape</div>
+    <h1>Généraliser l'outil aux <em>trois agences</em>.</h1>
+    <p class="sub">Formation d'une demi-journée par équipe, gabarit STEG à jour, support inclus.</p>
+    <p class="hint mono">supramax.energy</p>
+  </section>
+
+  <div class="progress" id="progress"></div>
+  <div class="counter" id="counter"></div>
+
+<script>
+  const slides = [...document.querySelectorAll('.slide')];
+  let i = 0;
+  const show = n => {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, k) => s.classList.toggle('active', k === i));
+    document.getElementById('progress').style.width = ((i + 1) / slides.length * 100) + '%';
+    document.getElementById('counter').textContent = (i + 1) + ' / ' + slides.length;
+  };
+  addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') show(i + 1);
+    if (e.key === 'ArrowLeft') show(i - 1);
+  });
+  addEventListener('click', () => show(i + 1));
+  show(0);
+
+  // Charts use token values only
+  const css = getComputedStyle(document.documentElement);
+  const blue = css.getPropertyValue('--color-primary').trim();
+  const orange = css.getPropertyValue('--color-accent').trim();
+  const muted = css.getPropertyValue('--color-muted-foreground').trim();
+  const border = css.getPropertyValue('--color-border').trim();
+
+  Chart.defaults.font.family = css.getPropertyValue('--primitive-fontFamily-body').trim();
+  Chart.defaults.color = muted;
+
+  new Chart(document.getElementById('timeChart'), {
+    type: 'line',
+    data: {
+      labels: ['Avant', 'M1', 'M2', 'M3', 'M4'],
+      datasets: [{
+        label: 'Heures par dossier',
+        data: [6.5, 3.2, 1.8, 1.1, 0.9],
+        borderColor: blue,
+        backgroundColor: 'color-mix(in srgb, ' + blue + ' 10%, transparent)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: blue,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { grid: { color: border }, title: { display: true, text: 'heures' } },
+        x: { grid: { display: false } },
+      }
+    }
+  });
+
+  new Chart(document.getElementById('volumeChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Sep', 'Oct', 'Nov', 'Déc', 'Jan', 'Fév'],
+      datasets: [{
+        label: 'Dossiers',
+        data: [5, 12, 28, 45, 61, 74],
+        backgroundColor: blue,
+        borderRadius: 4,
+      }, {
+        label: 'Objectif',
+        data: [10, 15, 25, 40, 55, 70],
+        backgroundColor: orange,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        y: { grid: { color: border } },
+        x: { grid: { display: false } },
+      }
+    }
+  });
+</script>
+</body>
+</html>

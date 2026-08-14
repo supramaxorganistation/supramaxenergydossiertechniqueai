@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '../api';
 import type { Dossier, Equipment, CatalogEquipment } from '../types';
 import { useFormValidation, required, positive, phone as phoneRule } from '../useFormValidation';
+import { Icon } from '../components/Icon';
 
 type FormState = {
   customerName: string;
@@ -188,7 +189,9 @@ function SectionScanner({
   return (
     <div className="flex gap-8" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
       <label className="btn btn-sm btn-ghost" style={{ cursor: 'pointer', margin: 0 }}>
-        {file ? '📄 ' + file.name : '📤 Fiche technique PDF'}
+        {file
+          ? <><Icon name="file-text" size={14} /> {file.name}</>
+          : <><Icon name="upload" size={14} /> Fiche technique PDF</>}
         <input
           type="file"
           accept=".pdf,.png,.jpg,.jpeg"
@@ -707,7 +710,7 @@ export default function DossierCreatePage({
   return (
     <form noValidate onSubmit={handleSubmit}>
       <div className="card">
-        <h3 className="card-title">{isEdit ? '✏️ Modification du dossier' : '👤 Informations client'}</h3>
+        <h3 className="card-title">{isEdit ? 'Modification du dossier' : 'Informations client'}</h3>
         <div className="form-grid">
           <div className="form-group">
             <label className="form-label">Nom complet *</label>
@@ -750,7 +753,7 @@ export default function DossierCreatePage({
       </div>
 
       <div className="card">
-        <h3 className="card-title">🔆 Système photovoltaïque</h3>
+        <h3 className="card-title">Système photovoltaïque</h3>
         {equipmentCount > 0 && (
           <div className="msg-box info mb-12">{equipmentCount} équipement(s) seront enregistrés avec ce dossier.</div>
         )}
@@ -1073,7 +1076,7 @@ export default function DossierCreatePage({
       </div>
 
       <div className="card">
-        <h3 className="card-title">🗂️ Équipements enregistrés (réutilisables)</h3>
+        <h3 className="card-title">Équipements enregistrés (réutilisables)</h3>
         {catalog.length === 0 ? (
           <p className="card-subtitle">
             Aucun équipement enregistré pour le moment. Scannez une fiche technique dans la section du composant

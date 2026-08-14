@@ -1,5 +1,6 @@
 import type { ComplianceReport } from '../types';
 import { Badge } from './ui';
+import { Icon } from './Icon';
 
 function num(v: unknown): string {
   if (v === undefined || v === null || Number.isNaN(Number(v))) return '—';
@@ -23,7 +24,9 @@ function CheckRow({
   const status = ok ? 'cl-ok' : 'cl-bad';
   return (
     <li>
-      <span className={`cl-status ${status}`}>{ok ? '✓' : '✗'}</span>
+      <span className={`cl-status ${status}`}>
+        <Icon name={ok ? 'check' : 'x'} size={12} strokeWidth={2.5} />
+      </span>
       <div>
         <strong>{label}</strong>
         {detail && <div className="text-muted" style={{ fontSize: 12 }}>{detail}</div>}
@@ -35,10 +38,10 @@ function CheckRow({
 export default function CompliancePanel({ report }: { report: ComplianceReport }) {
   const s = report?.summary;
   const banner = s?.fullCompliant
-    ? { cls: 'ok', icon: '✅', title: 'Conforme STEG' }
+    ? { cls: 'ok', icon: 'check-circle', title: 'Conforme STEG' }
     : s?.errorCount === 0
-      ? { cls: 'review', icon: '⚠️', title: 'À vérifier' }
-      : { cls: 'error', icon: '❌', title: 'Non conforme' };
+      ? { cls: 'review', icon: 'alert-triangle', title: 'À vérifier' }
+      : { cls: 'error', icon: 'x-circle', title: 'Non conforme' };
 
   const sc = report?.compatibility?.stringComputation;
   const pr = report?.compatibility?.powerRatio;
@@ -49,7 +52,7 @@ export default function CompliancePanel({ report }: { report: ComplianceReport }
   return (
     <div>
       <div className={`compliance-banner ${banner.cls}`}>
-        <span className="cb-icon">{banner.icon}</span>
+        <span className="cb-icon"><Icon name={banner.icon} size={22} /></span>
         <div>
           <div>{banner.title}</div>
           <div style={{ fontWeight: 400, fontSize: 12.5 }}>
@@ -88,7 +91,9 @@ export default function CompliancePanel({ report }: { report: ComplianceReport }
               <div className="kv-item"><span className="k">Section DC</span><span className="v">{fmt(dc.section, ' mm²')}</span></div>
               <div className="kv-item"><span className="k">Section DC recommandée</span><span className="v">{fmt(dc.recommendedSection, ' mm²')}</span></div>
               <div className="kv-item"><span className="k">Chute DC</span><span className="v">{fmt(dc.dropPercent, '%')}</span></div>
-              <div className="kv-item"><span className="k">Conforme</span><span className="v">{dc.compliant ? '✅' : '❌'}</span></div>
+              <div className="kv-item"><span className="k">Conforme</span><span className="v">{dc.compliant
+                ? <span className="kv-status ok"><Icon name="check" size={15} strokeWidth={2.25} /></span>
+                : <span className="kv-status bad"><Icon name="x" size={15} strokeWidth={2.25} /></span>}</span></div>
             </div>
           )}
           {ac && (
@@ -96,7 +101,9 @@ export default function CompliancePanel({ report }: { report: ComplianceReport }
               <div className="kv-item"><span className="k">Section AC</span><span className="v">{fmt(ac.section, ' mm²')}</span></div>
               <div className="kv-item"><span className="k">Section AC recommandée</span><span className="v">{fmt(ac.recommendedSection, ' mm²')}</span></div>
               <div className="kv-item"><span className="k">Chute AC</span><span className="v">{fmt(ac.dropPercent, '%')}</span></div>
-              <div className="kv-item"><span className="k">Conforme</span><span className="v">{ac.compliant ? '✅' : '❌'}</span></div>
+              <div className="kv-item"><span className="k">Conforme</span><span className="v">{ac.compliant
+                ? <span className="kv-status ok"><Icon name="check" size={15} strokeWidth={2.25} /></span>
+                : <span className="kv-status bad"><Icon name="x" size={15} strokeWidth={2.25} /></span>}</span></div>
             </div>
           )}
         </div>
@@ -109,7 +116,9 @@ export default function CompliancePanel({ report }: { report: ComplianceReport }
               <div className="kv-item"><span className="k">Pression du vent</span><span className="v">{fmt(wind.windPressure, ' Pa')}</span></div>
               <div className="kv-item"><span className="k">Ballast requis</span><span className="v">{fmt(wind.requiredBallastKg, ' kg')}</span></div>
               <div className="kv-item"><span className="k">Ballast installé</span><span className="v">{fmt(wind.ballastWeightKg, ' kg')}</span></div>
-              <div className="kv-item"><span className="k">Conforme</span><span className="v">{wind.compliant ? '✅' : '❌'}</span></div>
+              <div className="kv-item"><span className="k">Conforme</span><span className="v">{wind.compliant
+                ? <span className="kv-status ok"><Icon name="check" size={15} strokeWidth={2.25} /></span>
+                : <span className="kv-status bad"><Icon name="x" size={15} strokeWidth={2.25} /></span>}</span></div>
             </div>
           ) : (
             <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Analyse vent non disponible.</p>
