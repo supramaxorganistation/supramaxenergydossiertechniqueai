@@ -3,7 +3,10 @@ import type {
   ErpSalesOrder, ErpPurchaseOrder, ErpInvoice, ErpPayment,
   ErpAccount, ErpJournalEntry, ErpStockMovement,
   ErpEmployee, ErpAttendance, ErpStats,
-  ErpQuote, ErpSetting
+  ErpQuote, ErpSetting,
+  ErpInstallation, InstallationListResponse, InstallationListParams,
+  InstallationStats, InstallationMapPoint, InstallationEvent,
+  ChecklistConfigResponse, ChecklistConfigItem
 } from './erpTypes';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -165,4 +168,73 @@ export const erpApi = {
 
   // Invoice overdue check
   checkOverdueInvoices: () => erpRequest<{ message: string; modified: number }>('/erp/invoices/check-overdue', { method: 'POST' }),
+
+  // ============================================
+  // INSTALLATIONS
+  // ============================================
+  listInstallations: (params: InstallationListParams = {}) => {
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') qs.append(k, String(v));
+    });
+    const s = qs.toString();
+    return erpRequest<InstallationListResponse>(`/erp/installations${s ? `?${s}` : ''}`);
+  },
+  getInstallation: (id: string) => erpRequest<ErpInstallation>(`/erp/installations/${id}`),
+  createInstallation: (data: Partial<ErpInstallation> & { lat?: number; lng?: number }) =>
+    erpRequest<ErpInstallation>('/erp/installations', { method: 'POST', body: JSON.stringify(data) }),
+  updateInstallation: (id: string, data: Partial<ErpInstallation> & { lat?: number; lng?: number }) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  cancelInstallation: (id: string, reason: string) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  createInstallationFromQuote: (quoteId: string, data: Partial<ErpInstallation> = {}) =>
+    erpRequest<ErpInstallation>(`/erp/installations/from-quote/${quoteId}`, { method: 'POST', body: JSON.stringify(data) }),
+
+  // Stage transitions
+  startStage: (id: string, n: number) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/start`, { method: 'POST' }),
+  completeStage: (id: string, n: number, opts: { reason?: string; adminOverride?: boolean } = {}) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/complete`, { method: 'POST', body: JSON.stringify(opts) }),
+  blockStage: (id: string, n: number, reason: string) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/block`, { method: 'POST', body: JSON.stringify({ reason }) }),
+  unblockStage: (id: string, n: number) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/unblock`, { method: 'POST' }),
+  updateChecklistItem: (id: string, n: number, key: string, data: { value?: string; isDone?: boolean }) =>
+    erpRequest<{ stageNumber: number; code: string; checklist: unknown }>(
+      `/erp/installations/${id}/stages/${n}/checklist/${key}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Read-only journal + aggregates
+  getInstallationEvents: (id: string) => erpRequest<InstallationEvent[]>(`/erp/installations/${id}/events`),
+  installationStats: () => erpRequest<InstallationStats>('/erp/installations/stats/summary'),
+  installationMap: () => erpRequest<InstallationMapPoint[]>('/erp/installations/map'),
+
+  // Stage media (multipart) — erpRequest skips JSON Content-Type for FormData
+  uploadStagePhotos: (id: string, n: number, files: File[], meta: { checklistKey?: string; caption?: string; takenAt?: string; lat?: number; lng?: number } = {}) => {
+    const fd = new FormData();
+    Array.from(files).forEach((f) => fd.append('photos', f));
+    if (meta.checklistKey) fd.append('checklistKey', meta.checklistKey);
+    if (meta.caption) fd.append('caption', meta.caption);
+    if (meta.takenAt) fd.append('takenAt', meta.takenAt);
+    if (meta.lat != null) fd.append('lat', String(meta.lat));
+    if (meta.lng != null) fd.append('lng', String(meta.lng));
+    return erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/photos`, { method: 'POST', body: fd });
+  },
+  uploadStageDocument: (id: string, n: number, file: File, meta: { type?: string; checklistKey?: string } = {}) => {
+    const fd = new FormData();
+    fd.append('document', file);
+    if (meta.type) fd.append('type', meta.type);
+    if (meta.checklistKey) fd.append('checklistKey', meta.checklistKey);
+    return erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/documents`, { method: 'POST', body: fd });
+  },
+  deleteStagePhoto: (id: string, n: number, photoId: string) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/photos/${photoId}`, { method: 'DELETE' }),
+  deleteStageDocument: (id: string, n: number, docId: string) =>
+    erpRequest<ErpInstallation>(`/erp/installations/${id}/stages/${n}/documents/${docId}`, { method: 'DELETE' }),
+
+  // Checklist configuration (admin)
+  getChecklistsConfig: () => erpRequest<ChecklistConfigResponse>('/erp/installations/config/checklists'),
+  saveChecklistsConfig: (checklists: Record<string, ChecklistConfigItem[] | null>) =>
+    erpRequest<ChecklistConfigResponse>('/erp/installations/config/checklists', {
+      method: 'PUT', body: JSON.stringify({ checklists }),
+    }),
 };

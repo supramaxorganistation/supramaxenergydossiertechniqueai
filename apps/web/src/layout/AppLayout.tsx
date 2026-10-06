@@ -1,7 +1,7 @@
 import type { User } from '../types';
 import { Icon } from '../components/Icon';
 
-export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'dossier-edit' | 'admin' | 'profile' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
+export type Screen = 'dashboard' | 'dossiers' | 'dossier-detail' | 'dossier-create' | 'dossier-edit' | 'admin' | 'profile' | 'erp-dashboard' | 'erp-customers' | 'erp-products' | 'erp-quotes' | 'erp-installations' | 'erp-installation-detail' | 'erp-sales' | 'erp-purchases' | 'erp-stock' | 'erp-accounting' | 'erp-hr' | 'erp-settings';
 
 const NAV = [
   { key: 'dashboard', icon: 'dashboard', label: 'Tableau de bord' },
@@ -9,16 +9,17 @@ const NAV = [
 ] as const;
 
 const NAV_ERP = [
-  { key: 'erp-dashboard', icon: 'building', label: 'ERP Overview' },
+  { key: 'erp-dashboard', icon: 'building', label: 'Aperçu ERP' },
   { key: 'erp-customers', icon: 'users', label: 'CRM' },
-  { key: 'erp-products', icon: 'box', label: 'Products' },
-  { key: 'erp-quotes', icon: 'file-text', label: 'Quotes' },
-  { key: 'erp-sales', icon: 'cart', label: 'Sales' },
-  { key: 'erp-purchases', icon: 'clipboard', label: 'Purchases' },
+  { key: 'erp-products', icon: 'box', label: 'Produits' },
+  { key: 'erp-quotes', icon: 'file-text', label: 'Devis' },
+  { key: 'erp-installations', icon: 'sun', label: 'Installations' },
+  { key: 'erp-sales', icon: 'cart', label: 'Ventes' },
+  { key: 'erp-purchases', icon: 'clipboard', label: 'Achats' },
   { key: 'erp-stock', icon: 'inbox', label: 'Stock' },
-  { key: 'erp-accounting', icon: 'wallet', label: 'Accounting' },
-  { key: 'erp-hr', icon: 'user', label: 'HR' },
-  { key: 'erp-settings', icon: 'settings', label: 'Settings' },
+  { key: 'erp-accounting', icon: 'wallet', label: 'Comptabilité' },
+  { key: 'erp-hr', icon: 'user', label: 'RH' },
+  { key: 'erp-settings', icon: 'settings', label: 'Paramètres' },
 ] as const;
 
 const NAV_TECH = { key: 'dossier-create', icon: 'plus-circle', label: 'Nouveau dossier' } as const;
@@ -76,7 +77,7 @@ export default function AppLayout({
               <span className="nav-label">{item.label}</span>
             </button>
           ))}
-          <div className="nav-section">ERP Modules</div>
+          <div className="nav-section">Modules ERP</div>
           {NAV_ERP.map((item) => (
             <button
               key={item.key}

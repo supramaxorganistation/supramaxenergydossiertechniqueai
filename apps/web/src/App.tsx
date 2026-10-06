@@ -22,6 +22,8 @@ import AccountingPage from './pages/AccountingPage';
 import EmployeesPage from './pages/EmployeesPage';
 import QuotesPage from './pages/QuotesPage';
 import SettingsPage from './pages/SettingsPage';
+import InstallationsPage from './pages/InstallationsPage';
+import InstallationDetailPage from './pages/InstallationDetailPage';
 import { LoadingScreen } from './components/ui';
 
 function App() {
@@ -35,6 +37,7 @@ function App() {
   const [compliance, setCompliance] = useState<ComplianceReport | null>(null);
   const [isLoadingCompliance, setIsLoadingCompliance] = useState(false);
   const [hashRoute, setHashRoute] = useState(window.location.hash);
+  const [selectedInstallationId, setSelectedInstallationId] = useState<string>('');
 
   // Track hash changes so hash-based routes (e.g. reset-password) re-render
   useEffect(() => {
@@ -175,16 +178,18 @@ function App() {
     'dossier-edit': { title: editDossier ? `Modifier — ${editDossier.customerDetails.name}` : 'Modifier dossier', subtitle: 'Modifiez les informations du dossier' },
     admin: { title: 'Administration', subtitle: 'Gestion des utilisateurs et des rôles' },
     profile: { title: 'Mon profil', subtitle: 'Gérez votre compte et votre Face ID' },
-    'erp-dashboard': { title: 'ERP Overview', subtitle: 'Enterprise Resource Planning' },
-    'erp-customers': { title: 'CRM', subtitle: 'Customers & Suppliers management' },
-    'erp-products': { title: 'Products', subtitle: 'Product catalog & inventory' },
-    'erp-quotes': { title: 'Quotes', subtitle: 'Quotations & estimations' },
-    'erp-sales': { title: 'Sales', subtitle: 'Sales orders & invoices' },
-    'erp-purchases': { title: 'Purchases', subtitle: 'Purchase orders & suppliers' },
-    'erp-stock': { title: 'Stock', subtitle: 'Warehouses & stock movements' },
-    'erp-accounting': { title: 'Accounting', subtitle: 'Chart of accounts & journal entries' },
-    'erp-hr': { title: 'HR', subtitle: 'Employees & attendance' },
-    'erp-settings': { title: 'Settings', subtitle: 'ERP configuration & preferences' },
+    'erp-dashboard': { title: 'Aperçu ERP', subtitle: 'Progiciel de gestion intégré' },
+    'erp-customers': { title: 'CRM', subtitle: 'Gestion des clients et fournisseurs' },
+    'erp-products': { title: 'Produits', subtitle: 'Catalogue produits et inventaire' },
+    'erp-quotes': { title: 'Devis', subtitle: 'Devis et estimations' },
+    'erp-installations': { title: 'Installations', subtitle: 'Suivi de chantier photovoltaïque' },
+    'erp-installation-detail': { title: 'Détail installation', subtitle: 'Chronologie, photos et documents' },
+    'erp-sales': { title: 'Ventes', subtitle: 'Commandes de vente et factures' },
+    'erp-purchases': { title: 'Achats', subtitle: 'Commandes d’achat et fournisseurs' },
+    'erp-stock': { title: 'Stock', subtitle: 'Entrepôts et mouvements de stock' },
+    'erp-accounting': { title: 'Comptabilité', subtitle: 'Plan comptable et écritures de journal' },
+    'erp-hr': { title: 'RH', subtitle: 'Employés et pointage' },
+    'erp-settings': { title: 'Paramètres', subtitle: 'Configuration et préférences ERP' },
   };
 
   return (
@@ -258,6 +263,8 @@ function App() {
       {screen === 'erp-customers' && <CustomersPage />}
       {screen === 'erp-products' && <ProductsPage />}
       {screen === 'erp-quotes' && <QuotesPage />}
+      {screen === 'erp-installations' && <InstallationsPage currentUser={currentUser} onOpenInstallation={(id) => { setSelectedInstallationId(id); setScreen('erp-installation-detail'); }} />}
+      {screen === 'erp-installation-detail' && selectedInstallationId && <InstallationDetailPage installationId={selectedInstallationId} currentUser={currentUser} onBack={() => setScreen('erp-installations')} />}
       {screen === 'erp-sales' && <SalesPage />}
       {screen === 'erp-purchases' && <PurchasesPage />}
       {screen === 'erp-stock' && <StockPage />}

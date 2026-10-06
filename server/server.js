@@ -28,6 +28,7 @@ import { findLogo } from './services/docxBranding.js';
 import { runAgent, ruleBasedGuidance } from './services/dossierAgent.js';
 import { generateAiTexts, AI_TEXT_KEYS } from './services/aiTextGenerator.js';
 import { erpRouter } from './erpRoutes.js';
+import { installationRouter } from './installationRoutes.js';
 
 // Load config from the single root .env (monorepo root)
 const __serverDir = path.dirname(fileURLToPath(import.meta.url));
@@ -1373,6 +1374,10 @@ app.post('/items', authMiddleware, async (req, res) => {
 // ============================================
 // ERP MODULE ROUTES
 // ============================================
+
+// Installations module (mounted before the generic /erp router so its
+// static segments like /stats/summary, /map and /from-quote win over /:id)
+app.use('/erp/installations', authMiddleware, installationRouter);
 
 app.use('/erp', authMiddleware, erpRouter);
 
