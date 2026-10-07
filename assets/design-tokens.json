@@ -4,7 +4,7 @@
   "primitive": {
     "color": {
       "blue": {
-        "50": { "$value": "#E8F1F8", "$type": "color" },
+        "50": { "$value": "#E9F2F9", "$type": "color" },
         "100": { "$value": "#D3E5F2", "$type": "color" },
         "200": { "$value": "#A9CCE4", "$type": "color" },
         "300": { "$value": "#7FB3D6", "$type": "color" },
@@ -33,17 +33,17 @@
         "600": { "$value": "#B02A27", "$type": "color" }
       },
       "gray": {
-        "50": { "$value": "#F4F6F9", "$type": "color" },
-        "100": { "$value": "#EDF1F5", "$type": "color" },
-        "200": { "$value": "#DBE3EA", "$type": "color" },
-        "300": { "$value": "#C3CFDA", "$type": "color" },
-        "400": { "$value": "#93A3B2", "$type": "color" },
-        "500": { "$value": "#5A6B7B", "$type": "color" },
-        "600": { "$value": "#465665", "$type": "color" },
+        "50": { "$value": "#F6F8FB", "$type": "color" },
+        "100": { "$value": "#EFF3F8", "$type": "color" },
+        "200": { "$value": "#E4EAF1", "$type": "color" },
+        "300": { "$value": "#D2DBE5", "$type": "color" },
+        "400": { "$value": "#93A3B3", "$type": "color" },
+        "500": { "$value": "#5B6C7D", "$type": "color" },
+        "600": { "$value": "#47586A", "$type": "color" },
         "700": { "$value": "#33414E", "$type": "color" },
         "800": { "$value": "#22303C", "$type": "color" },
         "900": { "$value": "#14212B", "$type": "color" },
-        "950": { "$value": "#14212B", "$type": "color" }
+        "950": { "$value": "#0E1B25", "$type": "color" }
       },
       "white": { "$value": "#FFFFFF", "$type": "color" }
     },
@@ -65,7 +65,8 @@
       "md": { "$value": "0.9375rem", "$type": "dimension" },
       "lg": { "$value": "1.125rem", "$type": "dimension" },
       "xl": { "$value": "1.5rem", "$type": "dimension" },
-      "2xl": { "$value": "2rem", "$type": "dimension" }
+      "2xl": { "$value": "2rem", "$type": "dimension" },
+      "3xl": { "$value": "2.5rem", "$type": "dimension" }
     },
     "fontFamily": {
       "display": { "$value": "'Space Grotesk', 'Inter', system-ui, sans-serif", "$type": "fontFamily" },
@@ -74,27 +75,31 @@
     },
     "radius": {
       "sm": { "$value": "0.375rem", "$type": "dimension" },
-      "md": { "$value": "0.5rem", "$type": "dimension" },
-      "lg": { "$value": "0.75rem", "$type": "dimension" },
-      "xl": { "$value": "0.875rem", "$type": "dimension" },
+      "md": { "$value": "0.625rem", "$type": "dimension" },
+      "lg": { "$value": "0.875rem", "$type": "dimension" },
+      "xl": { "$value": "1.125rem", "$type": "dimension" },
       "full": { "$value": "9999px", "$type": "dimension" }
     },
     "shadow": {
       "none": { "$value": "none", "$type": "shadow" },
-      "sm": { "$value": "0 1px 2px 0 rgb(11 20 27 / 0.05)", "$type": "shadow" },
-      "md": { "$value": "0 6px 16px -4px rgb(11 20 27 / 0.12), 0 2px 6px -2px rgb(11 20 27 / 0.08)", "$type": "shadow" },
-      "lg": { "$value": "0 16px 40px -8px rgb(11 20 27 / 0.2)", "$type": "shadow" }
+      "sm": { "$value": "0 1px 2px 0 rgb(14 27 37 / 0.04), 0 1px 1px 0 rgb(14 27 37 / 0.03)", "$type": "shadow" },
+      "md": { "$value": "0 2px 4px -2px rgb(14 27 37 / 0.06), 0 12px 28px -18px rgb(14 27 37 / 0.22)", "$type": "shadow" },
+      "lg": { "$value": "0 4px 8px -4px rgb(14 27 37 / 0.06), 0 24px 56px -24px rgb(14 27 37 / 0.28)", "$type": "shadow" }
     },
     "duration": {
-      "fast": { "$value": "120ms", "$type": "duration" },
-      "normal": { "$value": "180ms", "$type": "duration" },
-      "slow": { "$value": "260ms", "$type": "duration" }
+      "fast": { "$value": "140ms", "$type": "duration" },
+      "normal": { "$value": "200ms", "$type": "duration" },
+      "slow": { "$value": "280ms", "$type": "duration" }
+    },
+    "ease": {
+      "soft": { "$value": "cubic-bezier(0.22, 1, 0.36, 1)", "$type": "cubicBezier" }
     }
   },
   "semantic": {
     "color": {
       "background": { "$value": "{primitive.color.gray.50}", "$type": "color" },
       "surface": { "$value": "{primitive.color.white}", "$type": "color" },
+      "surface-raised": { "$value": "{primitive.color.white}", "$type": "color" },
       "sunken": { "$value": "{primitive.color.gray.100}", "$type": "color" },
       "foreground": { "$value": "{primitive.color.gray.900}", "$type": "color" },
       "muted-foreground": { "$value": "{primitive.color.gray.500}", "$type": "color" },
@@ -116,7 +121,8 @@
       "danger": { "$value": "{primitive.color.red.500}", "$type": "color" },
       "danger-deep": { "$value": "{primitive.color.red.600}", "$type": "color" },
       "danger-soft": { "$value": "{primitive.color.red.50}", "$type": "color" },
-      "ring": { "$value": "{primitive.color.blue.300}", "$type": "color" }
+      "ring": { "$value": "{primitive.color.blue.300}", "$type": "color" },
+      "overlay": { "$value": "rgb(14 27 37 / 0.55)", "$type": "color" }
     }
   },
   "component": {
@@ -125,7 +131,8 @@
       "bg-hover": { "$value": "{semantic.color.primary-hover}", "$type": "color" },
       "fg": { "$value": "{semantic.color.primary-foreground}", "$type": "color" },
       "radius": { "$value": "{primitive.radius.md}", "$type": "dimension" },
-      "font-size": { "$value": "{primitive.fontSize.base}", "$type": "dimension" }
+      "font-size": { "$value": "{primitive.fontSize.base}", "$type": "dimension" },
+      "shadow": { "$value": "{primitive.shadow.sm}", "$type": "shadow" }
     },
     "input": {
       "bg": { "$value": "{semantic.color.surface}", "$type": "color" },
@@ -136,8 +143,14 @@
     "card": {
       "bg": { "$value": "{semantic.color.surface}", "$type": "color" },
       "border": { "$value": "{semantic.color.border}", "$type": "color" },
-      "shadow": { "$value": "{primitive.shadow.none}", "$type": "shadow" },
+      "shadow": { "$value": "{primitive.shadow.sm}", "$type": "shadow" },
       "radius": { "$value": "{primitive.radius.lg}", "$type": "dimension" }
+    },
+    "modal": {
+      "bg": { "$value": "{semantic.color.surface-raised}", "$type": "color" },
+      "border": { "$value": "{semantic.color.border}", "$type": "color" },
+      "shadow": { "$value": "{primitive.shadow.lg}", "$type": "shadow" },
+      "radius": { "$value": "{primitive.radius.xl}", "$type": "dimension" }
     }
   }
 }

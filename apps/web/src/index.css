@@ -3,6 +3,10 @@
    Source of truth: assets/design-tokens.json
    (primitive → semantic → component, generated via the
    design-system skill). Nothing below invents raw values.
+
+   Redesign v2 — "Calme majestueux":
+   generous rhythm, hairline elevation, soft motion,
+   typography-led hierarchy.
    ============================================================ */
 @import '../../../assets/design-tokens.css';
 
@@ -37,19 +41,30 @@
   --sun: var(--color-accent);
 
   --sidebar-bg: var(--color-sidebar);
-  --sidebar-text: color-mix(in srgb, var(--primitive-color-gray-300) 88%, white);
+  --sidebar-text: color-mix(in srgb, var(--primitive-color-gray-300) 86%, white);
   --sidebar-active: var(--color-primary);
-  --sidebar-muted: var(--primitive-color-gray-400);
+  --sidebar-muted: color-mix(in srgb, var(--primitive-color-gray-400) 82%, var(--color-sidebar));
 
+  /* Shape: rounded enough to feel calm, tight enough to feel engineered */
   --radius: var(--primitive-radius-lg);
   --radius-sm: var(--primitive-radius-md);
+  --radius-xl: var(--primitive-radius-xl);
 
-  /* Elevation policy: flat at rest; elevation only for floating layers
-     (menus, modals, popovers). Cards earn separation from borders + tints. */
-  --shadow-sm: none;
+  /* Elevation policy v2: hairline ambient at rest, lift on interaction,
+     full depth reserved for floating layers (menus, modals, toasts). */
+  --shadow-sm: var(--primitive-shadow-sm);
   --shadow: var(--primitive-shadow-md);
   --shadow-lg: var(--primitive-shadow-lg);
-  --ring: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  --shadow-hover:
+    0 2px 4px -2px rgb(14 27 37 / 0.06),
+    0 14px 32px -18px rgb(14 27 37 / 0.26);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--color-primary) 16%, transparent);
+
+  /* Motion: one easing curve, three durations */
+  --ease: var(--primitive-ease-soft);
+  --dur-fast: var(--primitive-duration-fast);
+  --dur: var(--primitive-duration-normal);
+  --dur-slow: var(--primitive-duration-slow);
 
   --display: var(--primitive-fontFamily-display);
   --sans: var(--primitive-fontFamily-body);
@@ -76,10 +91,10 @@ body,
 body {
   font-family: var(--sans);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text);
   background:
-    radial-gradient(1200px 480px at 88% -8%, color-mix(in srgb, var(--color-primary-soft) 70%, transparent), transparent 58%),
+    radial-gradient(1100px 460px at 88% -10%, color-mix(in srgb, var(--color-primary-soft) 55%, transparent), transparent 60%),
     var(--bg);
 }
 
@@ -87,15 +102,25 @@ body {
 h1,
 h2,
 h3,
-h4 {
+h4,
+h5,
+h6 {
   font-family: var(--display);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.022em;
   font-weight: 600;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 a {
   color: var(--primary);
   text-decoration: none;
+  text-underline-offset: 3px;
+  transition: color var(--dur-fast) var(--ease);
 }
 
 a:hover {
@@ -106,6 +131,7 @@ a:hover {
 :focus-visible {
   outline: 2px solid var(--color-ring);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 code,
@@ -115,5 +141,24 @@ pre,
 }
 
 ::selection {
-  background: var(--color-primary-soft);
+  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+/* Calm scrollbar: hairline thumb, no track noise */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-border-strong) 80%, transparent);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-faint);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
 }

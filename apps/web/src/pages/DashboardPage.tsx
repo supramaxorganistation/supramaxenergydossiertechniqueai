@@ -140,9 +140,9 @@ export default function DashboardPage({
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyYield}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#DBE3EA" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#5A6B7B' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#5A6B7B' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E4EAF1" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#5B6C7D' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#5B6C7D' }} />
                   <Tooltip />
                   <Bar dataKey="yield" fill="#10619C" radius={[6, 6, 0, 0]} />
                 </BarChart>

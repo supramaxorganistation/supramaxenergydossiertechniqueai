@@ -13,16 +13,16 @@ export const SYSTEM_TYPES = ['on_grid', 'hybrid', 'off_grid'];
 
 // Ordered, stable stage definitions. `stageNumber` is 1-based and never changes.
 export const STAGES = [
-  { number: 1,  code: 'quote_preparation', label: 'Préparation du devis',              icon: 'file-text',    color: '#64748b' },
-  { number: 2,  code: 'quote_delivered',   label: 'Devis livré au client',             icon: 'check-circle', color: '#0ea5e9' },
-  { number: 3,  code: 'site_survey',       label: 'Visite technique et prise de mesures', icon: 'search',    color: '#8b5cf6' },
-  { number: 4,  code: 'steg_file',         label: 'Préparation du dossier STEG',       icon: 'clipboard',    color: '#f59e0b' },
-  { number: 5,  code: 'material_purchase', label: 'Achat du matériel',                 icon: 'cart',         color: '#ef4444' },
-  { number: 6,  code: 'material_delivery', label: 'Livraison du matériel chez le client', icon: 'box',       color: '#14b8a6' },
-  { number: 7,  code: 'installation',      label: 'Installation',                      icon: 'zap',          color: '#2563eb' },
-  { number: 8,  code: 'steg_reception',    label: 'Réception STEG',                    icon: 'shield',       color: '#eab308' },
-  { number: 9,  code: 'meter_change',      label: 'Changement du compteur',            icon: 'refresh',      color: '#ec4899' },
-  { number: 10, code: 'completed',         label: 'Installation terminée',             icon: 'check-circle', color: '#22c55e' },
+  { number: 1,  code: 'quote_preparation', label: 'Préparation du devis',              icon: 'file-text',    color: '#5B6C7D' },
+  { number: 2,  code: 'quote_delivered',   label: 'Devis livré au client',             icon: 'check-circle', color: '#47586A' },
+  { number: 3,  code: 'site_survey',       label: 'Visite technique et prise de mesures', icon: 'search',    color: '#0B4A78' },
+  { number: 4,  code: 'steg_file',         label: 'Préparation du dossier STEG',       icon: 'clipboard',    color: '#10619C' },
+  { number: 5,  code: 'material_purchase', label: 'Achat du matériel',                 icon: 'cart',         color: '#093B60' },
+  { number: 6,  code: 'material_delivery', label: 'Livraison du matériel chez le client', icon: 'box',       color: '#9A5B00' },
+  { number: 7,  code: 'installation',      label: 'Installation',                      icon: 'zap',          color: '#C97209' },
+  { number: 8,  code: 'steg_reception',    label: 'Réception STEG',                    icon: 'shield',       color: '#EE8A17' },
+  { number: 9,  code: 'meter_change',      label: 'Changement du compteur',            icon: 'refresh',      color: '#25713A' },
+  { number: 10, code: 'completed',         label: 'Installation terminée',             icon: 'check-circle', color: '#2E8B47' },
 ];
 
 export const STAGE_COUNT = STAGES.length; // 10

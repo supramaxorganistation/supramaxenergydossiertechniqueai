@@ -215,8 +215,8 @@ export default function SalesPage() {
                 <td>{typeof inv.customer === 'object' ? inv.customer.name : inv.customerName}</td>
                 <td>{inv.date ? new Date(inv.date).toLocaleDateString() : '—'}</td>
                 <td style={{ fontWeight: 700 }}>{(inv.grandTotal || 0).toFixed(2)}</td>
-                <td style={{ color: '#059669' }}>{(inv.paidAmount || 0).toFixed(2)}</td>
-                <td style={{ color: '#dc2626', fontWeight: 600 }}>{(inv.outstandingAmount || 0).toFixed(2)}</td>
+                <td style={{ color: 'var(--success-deep)' }}>{(inv.paidAmount || 0).toFixed(2)}</td>
+                <td style={{ color: 'var(--danger)', fontWeight: 600 }}>{(inv.outstandingAmount || 0).toFixed(2)}</td>
                 <td><Badge color={INV_STATUS.find(s => s.value === inv.status)?.color || 'gray'}>{INV_STATUS.find(s => s.value === inv.status)?.label || inv.status}</Badge></td>
               </tr>
             ))}
