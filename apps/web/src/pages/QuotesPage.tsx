@@ -62,7 +62,7 @@ export default function QuotesPage() {
   return (
     <>
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>Devis / Estimations</h3>
+        <h3 className="page-section-title">Devis / Estimations</h3>
         <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Nouveau devis</button>
       </div>
 

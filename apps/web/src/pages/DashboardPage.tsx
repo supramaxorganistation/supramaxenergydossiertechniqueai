@@ -15,7 +15,7 @@ import type { Dossier } from '../types';
 import { StatCard, EmptyState } from '../components/ui';
 import type { Screen } from '../layout/AppLayout';
 
-const COLORS = ['#2563eb', '#f59e0b', '#059669', '#dc2626'];
+const COLORS = ['#10619C', '#EE8A17', '#2E8B47', '#D23430'];
 const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 export default function DashboardPage({
@@ -65,6 +65,28 @@ export default function DashboardPage({
 
   return (
     <>
+      <div className="page-hero">
+        <div className="page-hero-copy">
+          <h2>Bonjour, {userName}</h2>
+          <p>
+            Vous êtes connecté en tant que <strong>{roleLabel}</strong>.
+            {role !== 'client'
+              ? ' Gérez les dossiers techniques, vérifiez la conformité STEG et générez les PDF.'
+              : ' Suivez l’état d’avancement de vos dossiers.'}
+          </p>
+        </div>
+        <div className="flex gap-8 wrap">
+          <button className="btn btn-primary" onClick={() => onNavigate('dossiers')}>
+            Voir les dossiers
+          </button>
+          {role !== 'client' && (
+            <button className="btn btn-ghost" onClick={() => onNavigate('dossier-create')}>
+              Nouveau dossier
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-4 mb-16">
         <StatCard icon="folder" value={dossiers.length} label="Total dossiers" color="blue" />
         <StatCard icon="sun" value={`${totalPower.toFixed(1)} kWc`} label="Puissance installée" color="amber" />
@@ -79,9 +101,9 @@ export default function DashboardPage({
             title="Aucun dossier pour le moment"
             subtitle="Créez votre premier dossier technique pour commencer."
           />
-          <div style={{ textAlign: 'center' }}>
+          <div className="center">
             <button className="btn btn-primary" onClick={() => onNavigate('dossier-create')}>
-              + Nouveau dossier
+              Nouveau dossier
             </button>
           </div>
         </div>
@@ -118,11 +140,11 @@ export default function DashboardPage({
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={monthlyYield}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#DBE3EA" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#5A6B7B' }} />
+                  <YAxis tick={{ fontSize: 12, fill: '#5A6B7B' }} />
                   <Tooltip />
-                  <Bar dataKey="yield" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="yield" fill="#10619C" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -130,25 +152,6 @@ export default function DashboardPage({
         </div>
       )}
 
-      <div className="card mt-16">
-        <h4 className="card-title">Bonjour, {userName}</h4>
-        <p className="card-subtitle">
-          Vous êtes connecté en tant que <strong>{roleLabel}</strong>.
-          {role !== 'client'
-            ? ' Gérez les dossiers techniques, vérifiez la conformité STEG et générez les PDF.'
-            : ' Suivez l’état d’avancement de vos dossiers.'}
-        </p>
-        <div className="flex gap-8">
-          <button className="btn btn-primary" onClick={() => onNavigate('dossiers')}>
-            Voir les dossiers
-          </button>
-          {role !== 'client' && (
-            <button className="btn btn-ghost" onClick={() => onNavigate('dossier-create')}>
-              + Nouveau dossier
-            </button>
-          )}
-        </div>
-      </div>
     </>
   );
 }

@@ -131,11 +131,11 @@ export default function DossierDetailPage({
   return (
     <>
       <div className="flex-between mb-16">
-        <div className="flex-center">
+        <div className="detail-head">
           <button className="btn btn-ghost btn-sm" onClick={onBack}><Icon name="chevron-left" size={15} /> Retour</button>
-          <div style={{ marginLeft: 12 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700 }}>{dossier.customerDetails.name}</h2>
-            <div className="flex-center mt-12" style={{ marginTop: 4 }}>
+          <div>
+            <h2>{dossier.customerDetails.name}</h2>
+            <div className="flex-center detail-meta">
               <StatusBadge status={dossier.status} />
               <Badge color="blue">{p.peakPowerKwc} kWc</Badge>
             </div>

@@ -71,10 +71,10 @@ export default function SettingsPage() {
 
   if (!seeded && settings.length === 0) {
     return (
-      <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+      <div className="card settings-empty">
         <div className="settings-empty-icon"><Icon name="settings" size={44} strokeWidth={1.5} /></div>
         <h3>Aucun paramètre configuré pour le moment</h3>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Générez les paramètres par défaut pour commencer.</p>
+        <p className="text-muted mb-16">Générez les paramètres par défaut pour commencer.</p>
         <button className="btn btn-primary" onClick={handleSeed}>Générer les paramètres par défaut</button>
       </div>
     );

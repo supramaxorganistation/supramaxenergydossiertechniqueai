@@ -75,7 +75,7 @@ export default function CustomersPage() {
       </div>
 
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>{tab === 'customers' ? 'Clients' : 'Fournisseurs'}</h3>
+        <h3 className="page-section-title">{tab === 'customers' ? 'Clients' : 'Fournisseurs'}</h3>
         <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Ajouter {tab === 'customers' ? 'un client' : 'un fournisseur'}</button>
       </div>
 

@@ -110,6 +110,7 @@ export default function AppLayout({
       <div className="main">
         <header className="topbar">
           <div className="page-title">
+            <div className="page-kicker">Supramax Energy</div>
             <h1>{title}</h1>
             {subtitle && <p>{subtitle}</p>}
           </div>

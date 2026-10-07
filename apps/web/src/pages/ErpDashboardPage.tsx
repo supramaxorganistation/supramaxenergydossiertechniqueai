@@ -43,19 +43,19 @@ export default function ErpDashboardPage({ onNavigate }: { onNavigate: (s: Scree
         <div className="card">
           <h4 className="card-title">Chiffre d’affaires</h4>
           <p className="card-subtitle">Montant total facturé</p>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#059669' }}>{stats.totalRevenue.toFixed(2)} <span style={{ fontSize: 14, fontWeight: 600 }}>TND</span></div>
+          <div className="metric-figure ok">{stats.totalRevenue.toFixed(2)} <span className="unit">TND</span></div>
         </div>
         <div className="card">
           <h4 className="card-title">Impayés</h4>
           <p className="card-subtitle">Montants des factures impayées</p>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#dc2626' }}>{stats.totalOutstanding.toFixed(2)} <span style={{ fontSize: 14, fontWeight: 600 }}>TND</span></div>
+          <div className="metric-figure bad">{stats.totalOutstanding.toFixed(2)} <span className="unit">TND</span></div>
         </div>
       </div>
 
       <div className="card">
         <h4 className="card-title">Actions rapides</h4>
         <p className="card-subtitle">Accéder à un module ERP</p>
-        <div className="flex gap-8" style={{ flexWrap: 'wrap' }}>
+        <div className="flex gap-8 wrap">
           <button className="btn btn-primary" onClick={() => onNavigate('erp-customers')}>CRM</button>
           <button className="btn btn-primary" onClick={() => onNavigate('erp-products')}>Produits</button>
           <button className="btn btn-primary" onClick={() => onNavigate('erp-quotes')}>Devis</button>

@@ -273,6 +273,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           </span>
           <span>Supramax Energy</span>
         </div>
+        <div className="hero-kicker">Dossiers techniques PV</div>
         <h1>Génération automatique des dossiers techniques photovoltaïques</h1>
         <p>
           Plateforme de gestion de bout en bout : saisie des installations, calculs de
@@ -345,7 +346,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
 
             {/* reCAPTCHA (login/register only) */}
             {recaptchaSiteKey && !isForgot && (
-              <div style={{ marginBottom: 14 }}>
+              <div className="mb-16">
                 <div ref={recaptchaRef}></div>
               </div>
             )}
@@ -353,7 +354,7 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
             {error && <div className="msg-box error">{error}</div>}
             {success && <div className="msg-box info">{success}</div>}
 
-            <button className="btn btn-primary btn-block" type="submit" disabled={loading} style={{ marginTop: 8 }}>
+            <button className="btn btn-primary btn-block mt-12" type="submit" disabled={loading}>
               {loading
                 ? 'Patientez...'
                 : isRegister
@@ -368,10 +369,9 @@ export default function LoginPage({ onLogin }: { onLogin: (user: User) => void }
           {!isForgot && !isRegister && (
             <button
               type="button"
-              className="btn btn-outline btn-block"
+              className="btn btn-outline btn-block mt-12"
               onClick={() => { setError(''); setFaceModal(true); }}
               disabled={loading}
-              style={{ marginTop: 6 }}
             >
               <Icon name="face-scan" size={16} /> Se connecter avec Face ID
             </button>
@@ -482,6 +482,7 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
           </span>
           <span>Supramax Energy</span>
         </div>
+        <div className="hero-kicker">Accès sécurisé</div>
         <h1>Réinitialisation du mot de passe</h1>
         <p>Entrez votre nouveau mot de passe ci-dessous.</p>
       </div>
@@ -529,7 +530,7 @@ export function ResetPasswordPage({ token, onDone }: { token: string; onDone: ()
               {loading ? 'Réinitialisation...' : 'Réinitialiser le mot de passe'}
             </button>
           </form>
-          <div className="login-links" style={{ marginTop: 16 }}>
+          <div className="login-links mt-16">
             <a href="#" onClick={(e) => { e.preventDefault(); window.location.hash = ''; onDone(); }}>
               <Icon name="chevron-left" size={14} /> Retour à la connexion
             </a>

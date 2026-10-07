@@ -144,7 +144,7 @@ export default function InstallationsPage({
     <>
       {/* Header */}
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>Installations — suivi de chantier PV</h3>
+        <h3 className="page-section-title">Installations — suivi de chantier PV</h3>
         {canCreate && (
           <div className="flex gap-8">
             <button className="btn btn-ghost btn-sm" onClick={() => setCreateModal('quote')}><Icon name="file-text" size={14} /> Depuis un devis</button>

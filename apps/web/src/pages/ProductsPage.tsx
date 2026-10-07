@@ -65,7 +65,7 @@ export default function ProductsPage() {
       </div>
 
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>Produits</h3>
+        <h3 className="page-section-title">Produits</h3>
         <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Ajouter un produit</button>
       </div>
 
@@ -118,12 +118,12 @@ export default function ProductsPage() {
             <tbody>
               {products.map(p => (
                 <tr key={p._id}>
-                  <td style={{ fontFamily: 'monospace', fontSize: 12 }}>{p.sku || '—'}</td>
-                  <td style={{ fontWeight: 600 }}>{p.name}</td>
+                  <td className="num">{p.sku || '—'}</td>
+                  <td className="weight-600">{p.name}</td>
                   <td><Badge color="blue">{CATEGORIES.find(c => c.value === p.category)?.label || p.category}</Badge></td>
                   <td>{(p.buyingPrice || 0).toFixed(2)}</td>
                   <td>{(p.sellingPrice || 0).toFixed(2)}</td>
-                  <td style={{ fontWeight: 600, color: (p.stockQty || 0) <= (p.minStockQty || 0) ? '#dc2626' : undefined }}>{p.stockQty || 0}</td>
+                  <td className={`weight-600 ${(p.stockQty || 0) <= (p.minStockQty || 0) ? 'text-danger' : ''}`}>{p.stockQty || 0}</td>
                   <td>{(p.stockQty || 0) <= (p.minStockQty || 0) ? <Badge color="red">Faible</Badge> : <Badge color="green">OK</Badge>}</td>
                   <td><div className="row-actions"><button className="btn btn-ghost btn-sm" onClick={() => handleEdit(p)}>Modifier</button><button className="btn btn-danger btn-sm" onClick={() => handleDelete(p._id)}>Supprimer</button></div></td>
                 </tr>

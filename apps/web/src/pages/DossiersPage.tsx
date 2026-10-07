@@ -48,8 +48,8 @@ export default function DossiersPage({
 
   return (
     <>
-      <div className="flex-between mb-16">
-        <div className="search-input" style={{ flex: 1, maxWidth: 380 }}>
+      <div className="toolbar">
+        <div className="search-input toolbar-search">
           <input
             className="input"
             placeholder="Rechercher par client, CIN, onduleur..."
@@ -59,8 +59,7 @@ export default function DossiersPage({
         </div>
         <div className="flex gap-8">
           <select
-            className="select"
-            style={{ width: 170 }}
+            className="select select-compact"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as DossierStatus | 'ALL')}
           >
@@ -101,7 +100,7 @@ export default function DossiersPage({
                 <th>Onduleur</th>
                 <th>Statut</th>
                 <th>Créé le</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th className="right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -109,7 +108,7 @@ export default function DossiersPage({
                 <tr key={d._id}>
                   <td>
                     <strong>{d.customerDetails.name}</strong>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    <div className="cell-sub">
                       {d.customerDetails.phone || d.customerDetails.address}
                     </div>
                   </td>
@@ -117,11 +116,11 @@ export default function DossiersPage({
                   <td>{d.pvSystemParams.peakPowerKwc} kWc</td>
                   <td>{d.pvSystemParams.inverterModel}</td>
                   <td><StatusBadge status={d.status} /></td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
+                  <td className="nowrap">
                     {new Date(d.createdAt).toLocaleDateString('fr-FR')}
                   </td>
                   <td>
-                    <div className="row-actions" style={{ justifyContent: 'flex-end' }}>
+                    <div className="row-actions end">
                       <button className="btn btn-sm btn-ghost" onClick={() => onOpenDossier(d)}>
                         Ouvrir
                       </button>

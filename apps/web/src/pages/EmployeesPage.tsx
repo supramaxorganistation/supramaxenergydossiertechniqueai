@@ -91,7 +91,7 @@ export default function EmployeesPage() {
       {tab === 'employees' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Employés</h3>
+            <h3 className="page-section-title">Employés</h3>
             <button className="btn btn-primary" onClick={() => { resetEmpForm(); setShowEmpForm(true); }}>+ Ajouter un employé</button>
           </div>
           {showEmpForm && (
@@ -156,7 +156,7 @@ export default function EmployeesPage() {
       {tab === 'attendance' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Pointage</h3>
+            <h3 className="page-section-title">Pointage</h3>
             <button className="btn btn-primary" onClick={() => setShowAttForm(true)}>+ Enregistrer un pointage</button>
           </div>
           {showAttForm && (

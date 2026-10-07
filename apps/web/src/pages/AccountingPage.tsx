@@ -83,7 +83,7 @@ export default function AccountingPage() {
       {tab === 'accounts' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Plan comptable</h3>
+            <h3 className="page-section-title">Plan comptable</h3>
             <button className="btn btn-primary" onClick={() => setShowAccForm(true)}>+ Ajouter un compte</button>
           </div>
           {showAccForm && (
@@ -128,7 +128,7 @@ export default function AccountingPage() {
       {tab === 'journal' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Écritures de journal</h3>
+            <h3 className="page-section-title">Écritures de journal</h3>
             <button className="btn btn-primary" onClick={() => setShowJeForm(true)}>+ Nouvelle écriture</button>
           </div>
           {showJeForm && (

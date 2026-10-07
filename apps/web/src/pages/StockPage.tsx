@@ -55,7 +55,7 @@ export default function StockPage() {
       {tab === 'warehouses' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Entrepôts</h3>
+            <h3 className="page-section-title">Entrepôts</h3>
             <button className="btn btn-primary" onClick={() => setShowWhForm(true)}>+ Ajouter un entrepôt</button>
           </div>
           {showWhForm && (
@@ -96,7 +96,7 @@ export default function StockPage() {
       {tab === 'movements' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Mouvements de stock</h3>
+            <h3 className="page-section-title">Mouvements de stock</h3>
             <button className="btn btn-primary" onClick={() => setShowMvForm(true)}>+ Nouveau mouvement</button>
           </div>
           {showMvForm && (

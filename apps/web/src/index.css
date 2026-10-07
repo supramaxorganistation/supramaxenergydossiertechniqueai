@@ -37,8 +37,9 @@
   --sun: var(--color-accent);
 
   --sidebar-bg: var(--color-sidebar);
-  --sidebar-text: var(--primitive-color-gray-300);
+  --sidebar-text: color-mix(in srgb, var(--primitive-color-gray-300) 88%, white);
   --sidebar-active: var(--color-primary);
+  --sidebar-muted: var(--primitive-color-gray-400);
 
   --radius: var(--primitive-radius-lg);
   --radius-sm: var(--primitive-radius-md);
@@ -74,18 +75,22 @@ body,
 
 body {
   font-family: var(--sans);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 15px;
+  line-height: 1.6;
   color: var(--text);
-  background: var(--bg);
+  background:
+    radial-gradient(1200px 480px at 88% -8%, color-mix(in srgb, var(--color-primary-soft) 70%, transparent), transparent 58%),
+    var(--bg);
 }
 
 /* Typography carries hierarchy: display face for headings & key figures */
 h1,
 h2,
-h3 {
+h3,
+h4 {
   font-family: var(--display);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  font-weight: 600;
 }
 
 a {

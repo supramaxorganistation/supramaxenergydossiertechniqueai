@@ -103,7 +103,7 @@ export default function SalesPage() {
       </div>
 
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>{tab === 'orders' ? 'Commandes de vente' : 'Factures'}</h3>
+        <h3 className="page-section-title">{tab === 'orders' ? 'Commandes de vente' : 'Factures'}</h3>
         <button className="btn btn-primary" onClick={() => { tab === 'orders' ? resetSoForm() : resetInvForm(); setShowForm(true); }}>+ Nouvelle {tab === 'orders' ? 'commande' : 'facture'}</button>
       </div>
 

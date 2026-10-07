@@ -55,7 +55,7 @@ export default function PurchasesPage() {
   return (
     <>
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>Commandes d’achat</h3>
+        <h3 className="page-section-title">Commandes d’achat</h3>
         <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Nouvelle commande d’achat</button>
       </div>
 
