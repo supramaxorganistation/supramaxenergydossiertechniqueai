@@ -17,12 +17,12 @@ export default function StockPage() {
   const [whForm, setWhForm] = useState({ name: '', address: '', city: '' });
   const [mvForm, setMvForm] = useState({ product: '', warehouse: '', type: 'in' as StockMovementType, qty: 1, rate: 0, reason: '' });
 
-  const whRules = useMemo(() => ({ name: [required('Name'), minLength('Name', 2)] }), []);
+  const whRules = useMemo(() => ({ name: [required('Nom'), minLength('Nom', 2)] }), []);
   const whValidation = useFormValidation(whRules);
 
   const mvRules = useMemo(() => ({
-    product: [required('Product')],
-    qty: [required('Quantity'), positive('Quantity')],
+    product: [required('Produit')],
+    qty: [required('Quantité'), positive('Quantité')],
   }), []);
   const mvValidation = useFormValidation(mvRules);
 
@@ -48,44 +48,44 @@ export default function StockPage() {
   return (
     <>
       <div className="tabs">
-        <button className={`tab ${tab === 'warehouses' ? 'active' : ''}`} onClick={() => setTab('warehouses')}>Warehouses ({warehouses.length})</button>
-        <button className={`tab ${tab === 'movements' ? 'active' : ''}`} onClick={() => setTab('movements')}>Stock Movements ({movements.length})</button>
+        <button className={`tab ${tab === 'warehouses' ? 'active' : ''}`} onClick={() => setTab('warehouses')}>Entrepôts ({warehouses.length})</button>
+        <button className={`tab ${tab === 'movements' ? 'active' : ''}`} onClick={() => setTab('movements')}>Mouvements de stock ({movements.length})</button>
       </div>
 
       {tab === 'warehouses' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Warehouses</h3>
-            <button className="btn btn-primary" onClick={() => setShowWhForm(true)}>+ Add Warehouse</button>
+            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Entrepôts</h3>
+            <button className="btn btn-primary" onClick={() => setShowWhForm(true)}>+ Ajouter un entrepôt</button>
           </div>
           {showWhForm && (
             <div className="card mb-16">
-              <h4 className="card-title">New Warehouse</h4>
+              <h4 className="card-title">Nouvel entrepôt</h4>
               <form onSubmit={handleWhSubmit} noValidate>
                 <div className="form-grid">
                   <div className="form-group">
-                    <label className="form-label">Name *</label>
+                    <label className="form-label">Nom *</label>
                     <input className={`input ${whValidation.errors.name ? 'input-invalid' : ''}`} value={whForm.name} onChange={e => setWhForm({ ...whForm, name: e.target.value })} />
                     {whValidation.errors.name && <span className="field-error">{whValidation.errors.name}</span>}
                   </div>
-                  <div className="form-group"><label className="form-label">City</label><input className="input" value={whForm.city} onChange={e => setWhForm({ ...whForm, city: e.target.value })} /></div>
+                  <div className="form-group"><label className="form-label">Ville</label><input className="input" value={whForm.city} onChange={e => setWhForm({ ...whForm, city: e.target.value })} /></div>
                 </div>
-                <div className="form-group"><label className="form-label">Address</label><input className="input" value={whForm.address} onChange={e => setWhForm({ ...whForm, address: e.target.value })} /></div>
-                <div className="flex gap-8"><button type="submit" className="btn btn-primary">Create</button><button type="button" className="btn btn-ghost" onClick={() => { setShowWhForm(false); whValidation.clearErrors(); }}>Cancel</button></div>
+                <div className="form-group"><label className="form-label">Adresse</label><input className="input" value={whForm.address} onChange={e => setWhForm({ ...whForm, address: e.target.value })} /></div>
+                <div className="flex gap-8"><button type="submit" className="btn btn-primary">Créer</button><button type="button" className="btn btn-ghost" onClick={() => { setShowWhForm(false); whValidation.clearErrors(); }}>Annuler</button></div>
               </form>
             </div>
           )}
-          {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : warehouses.length === 0 ? (
-            <EmptyState icon="building" title="No warehouses" subtitle="Add your first warehouse." />
+          {loading ? <div className="loading-screen"><span className="spinner" /> Chargement...</div> : warehouses.length === 0 ? (
+            <EmptyState icon="building" title="Aucun entrepôt" subtitle="Ajoutez votre premier entrepôt." />
           ) : (
-            <div className="table-wrap"><table className="data"><thead><tr><th>Name</th><th>City</th><th>Address</th><th>Active</th><th>Actions</th></tr></thead><tbody>
+            <div className="table-wrap"><table className="data"><thead><tr><th>Nom</th><th>Ville</th><th>Adresse</th><th>Actif</th><th>Actions</th></tr></thead><tbody>
               {warehouses.map(w => (
                 <tr key={w._id}>
                   <td style={{ fontWeight: 600 }}>{w.name}</td>
                   <td>{w.city || '—'}</td>
                   <td>{w.address || '—'}</td>
-                  <td>{w.isActive ? <Badge color="green">Active</Badge> : <Badge color="red">Inactive</Badge>}</td>
-                  <td><button className="btn btn-danger btn-sm" onClick={async () => { if (confirm('Delete?')) { await erpApi.deleteWarehouse(w._id); await load(); } }}>Delete</button></td>
+                  <td>{w.isActive ? <Badge color="green">Actif</Badge> : <Badge color="red">Inactif</Badge>}</td>
+                  <td><button className="btn btn-danger btn-sm" onClick={async () => { if (confirm('Supprimer ?')) { await erpApi.deleteWarehouse(w._id); await load(); } }}>Supprimer</button></td>
                 </tr>
               ))}
             </tbody></table></div>
@@ -96,43 +96,43 @@ export default function StockPage() {
       {tab === 'movements' && (
         <>
           <div className="flex-between mb-16">
-            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Stock Movements</h3>
-            <button className="btn btn-primary" onClick={() => setShowMvForm(true)}>+ New Movement</button>
+            <h3 style={{ fontSize: 15, fontWeight: 700 }}>Mouvements de stock</h3>
+            <button className="btn btn-primary" onClick={() => setShowMvForm(true)}>+ Nouveau mouvement</button>
           </div>
           {showMvForm && (
             <div className="card mb-16">
-              <h4 className="card-title">New Stock Movement</h4>
+              <h4 className="card-title">Nouveau mouvement de stock</h4>
               <form onSubmit={handleMvSubmit} noValidate>
                 <div className="form-grid">
                   <div className="form-group">
-                    <label className="form-label">Product *</label>
-                    <select className={`select ${mvValidation.errors.product ? 'input-invalid' : ''}`} value={mvForm.product} onChange={e => setMvForm({ ...mvForm, product: e.target.value })}><option value="">Select...</option>{products.map(p => <option key={p._id} value={p._id}>{p.name} (Stock: {p.stockQty || 0})</option>)}</select>
+                    <label className="form-label">Produit *</label>
+                    <select className={`select ${mvValidation.errors.product ? 'input-invalid' : ''}`} value={mvForm.product} onChange={e => setMvForm({ ...mvForm, product: e.target.value })}><option value="">Sélectionner…</option>{products.map(p => <option key={p._id} value={p._id}>{p.name} (Stock : {p.stockQty || 0})</option>)}</select>
                     {mvValidation.errors.product && <span className="field-error">{mvValidation.errors.product}</span>}
                   </div>
-                  <div className="form-group"><label className="form-label">Warehouse</label><select className="select" value={mvForm.warehouse} onChange={e => setMvForm({ ...mvForm, warehouse: e.target.value })}><option value="">Select...</option>{warehouses.map(w => <option key={w._id} value={w._id}>{w.name}</option>)}</select></div>
-                  <div className="form-group"><label className="form-label">Type *</label><select className="select" value={mvForm.type} onChange={e => setMvForm({ ...mvForm, type: e.target.value as StockMovementType })}><option value="in">Stock In</option><option value="out">Stock Out</option><option value="adjustment">Adjustment</option></select></div>
+                  <div className="form-group"><label className="form-label">Entrepôt</label><select className="select" value={mvForm.warehouse} onChange={e => setMvForm({ ...mvForm, warehouse: e.target.value })}><option value="">Sélectionner…</option>{warehouses.map(w => <option key={w._id} value={w._id}>{w.name}</option>)}</select></div>
+                  <div className="form-group"><label className="form-label">Type *</label><select className="select" value={mvForm.type} onChange={e => setMvForm({ ...mvForm, type: e.target.value as StockMovementType })}><option value="in">Entrée</option><option value="out">Sortie</option><option value="adjustment">Ajustement</option></select></div>
                   <div className="form-group">
-                    <label className="form-label">Qty *</label>
+                    <label className="form-label">Qté *</label>
                     <input className={`input ${mvValidation.errors.qty ? 'input-invalid' : ''}`} type="number" min="1" value={mvForm.qty} onChange={e => setMvForm({ ...mvForm, qty: +e.target.value })} />
                     {mvValidation.errors.qty && <span className="field-error">{mvValidation.errors.qty}</span>}
                   </div>
-                  <div className="form-group"><label className="form-label">Rate (TND)</label><input className="input" type="number" step="0.01" value={mvForm.rate} onChange={e => setMvForm({ ...mvForm, rate: +e.target.value })} /></div>
+                  <div className="form-group"><label className="form-label">Prix (TND)</label><input className="input" type="number" step="0.01" value={mvForm.rate} onChange={e => setMvForm({ ...mvForm, rate: +e.target.value })} /></div>
                 </div>
-                <div className="form-group"><label className="form-label">Reason</label><input className="input" value={mvForm.reason} onChange={e => setMvForm({ ...mvForm, reason: e.target.value })} /></div>
-                <div className="flex gap-8"><button type="submit" className="btn btn-primary">Record</button><button type="button" className="btn btn-ghost" onClick={() => { setShowMvForm(false); mvValidation.clearErrors(); }}>Cancel</button></div>
+                <div className="form-group"><label className="form-label">Motif</label><input className="input" value={mvForm.reason} onChange={e => setMvForm({ ...mvForm, reason: e.target.value })} /></div>
+                <div className="flex gap-8"><button type="submit" className="btn btn-primary">Enregistrer</button><button type="button" className="btn btn-ghost" onClick={() => { setShowMvForm(false); mvValidation.clearErrors(); }}>Annuler</button></div>
               </form>
             </div>
           )}
-          {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : movements.length === 0 ? (
-            <EmptyState icon="box" title="No stock movements" subtitle="Record your first stock movement." />
+          {loading ? <div className="loading-screen"><span className="spinner" /> Chargement...</div> : movements.length === 0 ? (
+            <EmptyState icon="box" title="Aucun mouvement de stock" subtitle="Enregistrez votre premier mouvement de stock." />
           ) : (
-            <div className="table-wrap"><table className="data"><thead><tr><th>Date</th><th>Product</th><th>Warehouse</th><th>Type</th><th>Qty</th><th>Before</th><th>After</th><th>Reason</th></tr></thead><tbody>
+            <div className="table-wrap"><table className="data"><thead><tr><th>Date</th><th>Produit</th><th>Entrepôt</th><th>Type</th><th>Qté</th><th>Avant</th><th>Après</th><th>Motif</th></tr></thead><tbody>
               {movements.map(m => (
                 <tr key={m._id}>
                   <td>{m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}</td>
                   <td style={{ fontWeight: 600 }}>{typeof m.product === 'object' ? m.product.name : m.productName}</td>
                   <td>{typeof m.warehouse === 'object' ? m.warehouse?.name : m.warehouseName || '—'}</td>
-                  <td><Badge color={m.type === 'in' ? 'green' : m.type === 'out' ? 'red' : 'amber'}>{m.type === 'in' ? 'IN' : m.type === 'out' ? 'OUT' : 'ADJ'}</Badge></td>
+                  <td><Badge color={m.type === 'in' ? 'green' : m.type === 'out' ? 'red' : 'amber'}>{m.type === 'in' ? 'ENT' : m.type === 'out' ? 'SOR' : 'AJU'}</Badge></td>
                   <td style={{ fontWeight: 700 }}>{m.type === 'out' ? '-' : '+'}{m.qty}</td>
                   <td>{m.previousQty}</td>
                   <td style={{ fontWeight: 600 }}>{m.newQty}</td>

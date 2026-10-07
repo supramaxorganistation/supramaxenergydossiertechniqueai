@@ -1,25 +1,60 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Supramax Energy",
+    "slug": "supramax-energy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "supramax",
     "userInterfaceStyle": "light",
+    "extra": {
+      "apiUrl": ""
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.supramax.energy",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_MEDIA_IMAGES",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sharing",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Supramax Energy utilise la caméra pour la reconnaissance faciale."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Supramax Energy accede a vos photos pour joindre des documents et des verifications de chantier.",
+          "cameraPermission": "Supramax Energy utilise l'appareil photo pour capturer les photos de verification."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Supramax Energy utilise votre position pour geolocaliser les installations et les dossiers."
+        }
+      ]
+    ]
   }
 }

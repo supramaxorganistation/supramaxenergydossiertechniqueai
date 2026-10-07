@@ -6,10 +6,10 @@ import { Icon } from '../components/Icon';
 type SettingsForm = Record<string, Record<string, any>>;
 
 const CATEGORIES = [
-  { key: 'company', label: 'Company Info', icon: 'building' },
-  { key: 'general', label: 'General', icon: 'settings' },
-  { key: 'invoice', label: 'Invoice', icon: 'file-text' },
-  { key: 'quote', label: 'Quote', icon: 'pen' },
+  { key: 'company', label: 'Informations société', icon: 'building' },
+  { key: 'general', label: 'Général', icon: 'settings' },
+  { key: 'invoice', label: 'Facture', icon: 'file-text' },
+  { key: 'quote', label: 'Devis', icon: 'pen' },
 ];
 
 export default function SettingsPage() {
@@ -60,22 +60,22 @@ export default function SettingsPage() {
         valueType: s.valueType,
       }));
       await erpApi.bulkUpdateSettings(updates);
-      alert('Settings saved!');
+      alert('Paramètres enregistrés !');
     } catch (err: any) { alert(err.message); }
     setSaving(false);
   };
 
   const categorySettings = (category: string) => settings.filter(s => s.category === category);
 
-  if (loading) return <div className="loading-screen"><span className="spinner" /> Loading settings...</div>;
+  if (loading) return <div className="loading-screen"><span className="spinner" /> Chargement des paramètres...</div>;
 
   if (!seeded && settings.length === 0) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
         <div className="settings-empty-icon"><Icon name="settings" size={44} strokeWidth={1.5} /></div>
-        <h3>No settings configured yet</h3>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Seed default settings to get started.</p>
-        <button className="btn btn-primary" onClick={handleSeed}>Seed Default Settings</button>
+        <h3>Aucun paramètre configuré pour le moment</h3>
+        <p style={{ color: 'var(--text-muted)', marginBottom: 16 }}>Générez les paramètres par défaut pour commencer.</p>
+        <button className="btn btn-primary" onClick={handleSeed}>Générer les paramètres par défaut</button>
       </div>
     );
   }
@@ -98,7 +98,7 @@ export default function SettingsPage() {
         const items = categorySettings(cat.key);
         return (
           <div key={cat.key} className="card">
-            <h4 className="card-title"><Icon name={cat.icon} size={15} /> {cat.label} Settings</h4>
+            <h4 className="card-title"><Icon name={cat.icon} size={15} /> Paramètres — {cat.label}</h4>
             <div className="form-grid">
               {items.map(s => (
                 <div className="form-group" key={s.key}>
@@ -110,8 +110,8 @@ export default function SettingsPage() {
                       value={String(form[cat.key]?.[s.key] ?? s.value)}
                       onChange={e => handleChange(cat.key, s.key, e.target.value === 'true')}
                     >
-                      <option value="true">Yes</option>
-                      <option value="false">No</option>
+                      <option value="true">Oui</option>
+                      <option value="false">Non</option>
                     </select>
                   ) : s.valueType === 'number' ? (
                     <input
@@ -134,12 +134,12 @@ export default function SettingsPage() {
             {items.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <button className="btn btn-primary" onClick={() => handleSave(cat.key)} disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                 </button>
               </div>
             )}
             {items.length === 0 && (
-              <p style={{ color: 'var(--text-muted)' }}>No settings in this category yet.</p>
+              <p style={{ color: 'var(--text-muted)' }}>Aucun paramètre dans cette catégorie pour le moment.</p>
             )}
           </div>
         );

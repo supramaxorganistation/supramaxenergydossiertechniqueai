@@ -16,9 +16,9 @@ export default function CustomersPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', address: '', city: '', taxId: '', customerGroup: 'individual' as CustomerGroup, supplierGroup: 'equipment' as SupplierGroup, notes: '' });
 
   const rules = useMemo(() => ({
-    name: [required('Name'), minLength('Name', 2)],
-    email: [email('Email')],
-    phone: [phone('Phone')],
+    name: [required('Nom'), minLength('Nom', 2)],
+    email: [email('E-mail')],
+    phone: [phone('Téléphone')],
   }), []);
   const { errors, validate, clearErrors } = useFormValidation(rules);
 
@@ -56,7 +56,7 @@ export default function CustomersPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this record?')) return;
+    if (!confirm('Supprimer cet enregistrement ?')) return;
     try {
       if (tab === 'customers') await erpApi.deleteCustomer(id);
       else await erpApi.deleteSupplier(id);
@@ -70,56 +70,56 @@ export default function CustomersPage() {
   return (
     <>
       <div className="tabs">
-        <button className={`tab ${tab === 'customers' ? 'active' : ''}`} onClick={() => setTab('customers')}>Customers ({customers.length})</button>
-        <button className={`tab ${tab === 'suppliers' ? 'active' : ''}`} onClick={() => setTab('suppliers')}>Suppliers ({suppliers.length})</button>
+        <button className={`tab ${tab === 'customers' ? 'active' : ''}`} onClick={() => setTab('customers')}>Clients ({customers.length})</button>
+        <button className={`tab ${tab === 'suppliers' ? 'active' : ''}`} onClick={() => setTab('suppliers')}>Fournisseurs ({suppliers.length})</button>
       </div>
 
       <div className="flex-between mb-16">
-        <h3 style={{ fontSize: 15, fontWeight: 700 }}>{tab === 'customers' ? 'Customers' : 'Suppliers'}</h3>
-        <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Add {tab === 'customers' ? 'Customer' : 'Supplier'}</button>
+        <h3 style={{ fontSize: 15, fontWeight: 700 }}>{tab === 'customers' ? 'Clients' : 'Fournisseurs'}</h3>
+        <button className="btn btn-primary" onClick={() => { resetForm(); setShowForm(true); }}>+ Ajouter {tab === 'customers' ? 'un client' : 'un fournisseur'}</button>
       </div>
 
       {showForm && (
         <div className="card mb-16">
-          <h4 className="card-title">{editingId ? 'Edit' : 'New'} {tab === 'customers' ? 'Customer' : 'Supplier'}</h4>
+          <h4 className="card-title">{editingId ? 'Modifier' : 'Nouveau'} — {tab === 'customers' ? 'Client' : 'Fournisseur'}</h4>
           <form onSubmit={handleSubmit} noValidate>
             <div className="form-grid">
               <div className="form-group">
-                <label className="form-label">Name *</label>
+                <label className="form-label">Nom *</label>
                 <input className={`input ${errors.name ? 'input-invalid' : ''}`} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
                 {errors.name && <span className="field-error">{errors.name}</span>}
               </div>
               <div className="form-group">
-                <label className="form-label">Email</label>
+                <label className="form-label">E-mail</label>
                 <input className={`input ${errors.email ? 'input-invalid' : ''}`} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 {errors.email && <span className="field-error">{errors.email}</span>}
               </div>
               <div className="form-group">
-                <label className="form-label">Phone</label>
+                <label className="form-label">Téléphone</label>
                 <input className={`input ${errors.phone ? 'input-invalid' : ''}`} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
                 {errors.phone && <span className="field-error">{errors.phone}</span>}
               </div>
-              <div className="form-group"><label className="form-label">City</label><input className="input" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
-              <div className="form-group"><label className="form-label">Address</label><input className="input" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
-              <div className="form-group"><label className="form-label">Tax ID</label><input className="input" value={form.taxId} onChange={e => setForm({ ...form, taxId: e.target.value })} /></div>
+              <div className="form-group"><label className="form-label">Ville</label><input className="input" value={form.city} onChange={e => setForm({ ...form, city: e.target.value })} /></div>
+              <div className="form-group"><label className="form-label">Adresse</label><input className="input" value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} /></div>
+              <div className="form-group"><label className="form-label">Matricule fiscal</label><input className="input" value={form.taxId} onChange={e => setForm({ ...form, taxId: e.target.value })} /></div>
               {tab === 'customers' ? (
-                <div className="form-group"><label className="form-label">Group</label><select className="select" value={form.customerGroup} onChange={e => setForm({ ...form, customerGroup: e.target.value as CustomerGroup })}><option value="individual">Individual</option><option value="company">Company</option><option value="government">Government</option></select></div>
+                <div className="form-group"><label className="form-label">Groupe</label><select className="select" value={form.customerGroup} onChange={e => setForm({ ...form, customerGroup: e.target.value as CustomerGroup })}><option value="individual">Particulier</option><option value="company">Société</option><option value="government">Administration</option></select></div>
               ) : (
-                <div className="form-group"><label className="form-label">Group</label><select className="select" value={form.supplierGroup} onChange={e => setForm({ ...form, supplierGroup: e.target.value as SupplierGroup })}><option value="equipment">Equipment</option><option value="raw_material">Raw Material</option><option value="service">Service</option><option value="other">Other</option></select></div>
+                <div className="form-group"><label className="form-label">Groupe</label><select className="select" value={form.supplierGroup} onChange={e => setForm({ ...form, supplierGroup: e.target.value as SupplierGroup })}><option value="equipment">Équipement</option><option value="raw_material">Matière première</option><option value="service">Service</option><option value="other">Autre</option></select></div>
               )}
             </div>
             <div className="form-group"><label className="form-label">Notes</label><textarea className="textarea" rows={2} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} /></div>
-            <div className="flex gap-8"><button type="submit" className="btn btn-primary">{editingId ? 'Update' : 'Create'}</button><button type="button" className="btn btn-ghost" onClick={resetForm}>Cancel</button></div>
+            <div className="flex gap-8"><button type="submit" className="btn btn-primary">{editingId ? 'Mettre à jour' : 'Créer'}</button><button type="button" className="btn btn-ghost" onClick={resetForm}>Annuler</button></div>
           </form>
         </div>
       )}
 
-      {loading ? <div className="loading-screen"><span className="spinner" /> Loading...</div> : items.length === 0 ? (
-        <EmptyState icon={tab === 'customers' ? 'users' : 'building'} title={`No ${tab} yet`} subtitle="Add your first record to get started." />
+      {loading ? <div className="loading-screen"><span className="spinner" /> Chargement...</div> : items.length === 0 ? (
+        <EmptyState icon={tab === 'customers' ? 'users' : 'building'} title={tab === 'customers' ? 'Aucun client' : 'Aucun fournisseur'} subtitle="Ajoutez votre premier enregistrement pour commencer." />
       ) : (
         <div className="table-wrap">
           <table className="data">
-            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>City</th><th>{tab === 'customers' ? 'Group' : 'Group'}</th><th>Balance</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Nom</th><th>E-mail</th><th>Téléphone</th><th>Ville</th><th>Groupe</th><th>Solde</th><th>Actions</th></tr></thead>
             <tbody>
               {items.map(item => (
                 <tr key={item._id}>
@@ -129,7 +129,7 @@ export default function CustomersPage() {
                   <td>{item.city || '—'}</td>
                   <td><Badge color="blue">{(item as any)[groupLabel] || '—'}</Badge></td>
                   <td style={{ fontWeight: 600 }}>{(item.totalBalance || 0).toFixed(2)} TND</td>
-                  <td><div className="row-actions"><button className="btn btn-ghost btn-sm" onClick={() => handleEdit(item)}>Edit</button><button className="btn btn-danger btn-sm" onClick={() => handleDelete(item._id)}>Delete</button></div></td>
+                  <td><div className="row-actions"><button className="btn btn-ghost btn-sm" onClick={() => handleEdit(item)}>Modifier</button><button className="btn btn-danger btn-sm" onClick={() => handleDelete(item._id)}>Supprimer</button></div></td>
                 </tr>
               ))}
             </tbody>
