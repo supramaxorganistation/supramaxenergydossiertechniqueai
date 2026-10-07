@@ -1380,12 +1380,21 @@ app.use('/erp', authMiddleware, erpRouter);
 // DATABASE CONNECTION & SERVER START
 // ============================================
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    app.listen(port, () => console.log(`API running on http://localhost:${port}`));
-  })
-  .catch((error) => {
-    console.error('MongoDB connection error:', error.message);
-    process.exit(1);
-  });
+const startServer = () => {
+  app.listen(port, () => console.log(`API running on http://localhost:${port}`));
+};
+
+if (!process.env.MONGO_URI) {
+  console.warn('MONGO_URI is not set; starting API without a database connection.');
+  startServer();
+} else {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+      console.log('MongoDB connected');
+      startServer();
+    })
+    .catch((error) => {
+      console.error('MongoDB connection error:', error.message);
+      startServer();
+    });
+}
