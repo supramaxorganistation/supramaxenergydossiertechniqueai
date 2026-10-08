@@ -44,7 +44,7 @@ export default function AppLayout({
 }) {
   const canCreate = currentUser.role === 'admin' || currentUser.role === 'technician';
   const isAdmin = currentUser.role === 'admin';
-  const initials = (currentUser.name || currentUser.email || '?').slice(0, 1).toUpperCase();
+  const initials = (currentUser.name || currentUser.email || '?').slice(0, 1).toUpperCase() || '?';
 
   const items: { key: Screen; icon: string; label: string }[] = [
     ...NAV,
@@ -121,6 +121,26 @@ export default function AppLayout({
           >
             <span className="profile-btn-avatar">{initials}</span>
             <span className="profile-btn-label">Mon profil</span>
+          </button>
+          <button
+            className="theme-toggle"
+            aria-label="Mode jour / nuit"
+            onClick={() => {
+              const html = document.documentElement;
+              const isDark = html.getAttribute('data-theme') === 'dark';
+              if (isDark) {
+                html.removeAttribute('data-theme');
+                localStorage.setItem('theme', 'light');
+              } else {
+                html.setAttribute('data-theme', 'dark');
+                localStorage.setItem('theme', 'dark');
+              }
+            }}
+          >
+            <Icon
+              name={document.documentElement.getAttribute('data-theme') === 'dark' ? 'sun' : 'moon'}
+              size={18}
+            />
           </button>
         </header>
         <div className="content">{children}</div>

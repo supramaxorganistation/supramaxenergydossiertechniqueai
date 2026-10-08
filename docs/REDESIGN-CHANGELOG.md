@@ -44,9 +44,30 @@ The previous UI was a patchwork of ad-hoc colors, emoji-as-icons, gradients and 
 - **New**: `assets/banners/supramax-hero-1920x600.html` + `.png`, `assets/banners/supramax-social-1080x1080.html` + `.png`.
 - Same tokens, fonts, orbit-arc motif and tinted-containment stat strip; one CTA per banner; no gradients, no stock imagery.
 
-## 7 · Slides (skill: slides)
+## 7 · UI features (skill: ui-ux-pro-max)
 
-- **New**: `assets/slides/supramax-deck-template.html` (+ `deck-preview.png`) — 6-slide template importing `design-tokens.css`, Chart.js (SRI-pinned), keyboard/click navigation, progress bar, token-only colors, dark cover/CTA slides reusing the orbit arc.
+- **New**: Light / dark mode toggle in top‑right corner (sun / moon icon). Clicking cycles `data-theme` on `<html>` and persists the choice in `localStorage`. Dark mode applies a full palette shift (backgrounds, surfaces, borders, text) while keeping brand blue/orange as accent signals. Respects `prefers-reduced-motion` by neutralizing hover/active transforms.
+- Theme toggle lives in `apps/web/src/layout/AppLayout.tsx` and is styled via CSS variables in `apps/web/src/App.css`.
+- `prefers-reduced-motion` block neutralizes all transform-on-hover/active animations for reduced‑motion users.
+
+## 8 · Night‑mode specifics
+
+- Dark surface: `#0d1420` (deep calm navy); hover accents use brand opacity‑lift rather than bright highlights.
+- Border contrast: `rgba(255,255,255,0.08)` at rest, `rgba(255,255,255,0.12)` strong; focus ring 2px `var(--primary)` with `outline-offset: 2px`.
+- All component shadows deepen (`--shadow-sm`, `--shadow`, `--shadow-lg`) for layered elevation without harsh contrast.
+- Text colors shift to `#e8eef5` / `#a8b2c5` / `#6a7a94` on dark surfaces; brand accent `#EE8A17` (Signal Orange) remains the sole highlight.
+- No decorative gradients on chrome; only flat containment with hairline borders.
+
+## Anti‑slop checklist (continued)
+
+- Theme toggle uses only the sun/moon icon; no emoji, no text labels beyond aria‑label.
+- Dark mode does not introduce purple/pink gradients or secondary accent colors.
+- All color decisions flow from the token system (`design-tokens.json` → `design-tokens.css`); no hardcoded hex outside the token set.
+- `prefers-reduced-motion` animation neutralization is tested on every interactive element.
+
+## Review
+
+Run the app as usual (`npm run dev` at the root) and open the web app; use the sun/moon button in the top‑right corner to toggle light/dark mode. Verify that page content re‑colors consistently and that reduced‑motion settings suppress hover transforms.
 
 ## Anti-slop checklist (verified per screen/banner/slide)
 

@@ -145,7 +145,24 @@ Density: data tables tight (8–12px), page headers and login generous (32–64p
 - Custom inline SVG set, 24px grid, 1.75px stroke, rounded caps/joins, outline only.
 - One icon per action; never emoji as icon.
 
-## 8. AI image style (banners)
+## 8. Light / dark mode
+
+- The app supports a light/dark toggle in the top‑right corner (sun / moon icon).
+- Clicking cycles `data-theme="dark"` on `<html>` and persists the choice in `localStorage`.
+- Dark mode palette (applied via `html[data-theme="dark"]` CSS variables in `apps/web/src/App.css`):
+  - Page background: `#0d1420` (deep calm navy).
+  - Surface: `#1a2332`.
+  - Border rest: `rgba(255,255,255,0.08)`; strong: `rgba(255,255,255,0.12)`.
+  - Text: `#e8eef5` (readable), `#a8b2c5` (muted), `#6a7a94` (faint).
+  - Accent stays Signal Orange `#EE8A17`; used only for highlights/interactions.
+- No decorative gradients on chrome; flat containment with 1px hairline borders only.
+- All shadows deepen for layered elevation (`--shadow-sm`, `--shadow`, `--shadow-lg`).
+- `prefers-reduced-motion` neutralizes all hover/active transforms.
+- The toggle uses only the SVG sun/moon icon; no text labels beyond `aria-label="Mode jour / nuit"`.
+- No purple/pink gradients or secondary accent colors are introduced in dark mode.
+- All color decisions flow from the token system; no hardcoded hex outside `design-tokens.json`.
+
+## 9. AI image style (banners)
 
 Base prompt: "Flat vector composition, cool porcelain background #F4F6F9,
 deep grid blue #10619C dominant, single signal-orange #EE8A17 arc motif,
